@@ -707,16 +707,16 @@ function renderRangs(){
         ${Object.entries(PL).map(([k,l])=>`<div class="rp"><span>${r.permissions?.[k]?'✅':'❌'}</span><span>${l}</span></div>`).join('')}
         ${(r.objetsProduction||[]).length?`<div style="margin-top:.5rem;font-size:.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:.3rem">Objets déclarables</div><div class="ritems">${r.objetsProduction.map(o=>`<span class="rtag">${o}</span>`).join('')}</div>`:''}
         <div class="ract">
-          <button class="btn-s" style="font-size:.74rem;padding:.38rem .75rem" onclick="window.editRang('${r.id}')">✏️ Modifier</button>
-          <button class="btn-d" style="font-size:.74rem;padding:.38rem .75rem" onclick="window.delRang('${r.id}','${r.nom.replace(/'/g,'\\'')}')">🗑️</button>
+          <button class="btn-s" style="font-size:.74rem;padding:.38rem .75rem" onclick="window.editRang(this)" data-id="${r.id}">✏️ Modifier</button>
+          <button class="btn-d" style="font-size:.74rem;padding:.38rem .75rem" onclick="window.delRang(this)" data-id="${r.id}" data-nom="${r.nom}">🗑️</button>
         </div>
       </div>
     </div>`).join('');
 }
 
 $('btn-cr')?.addEventListener('click',()=>openRangModal(null));
-window.editRang=id=>{const r=RANGS.find(x=>x.id===id);if(r)openRangModal(r);};
-window.delRang=(id,n)=>showModal(`Supprimer "${n}" ?`,`<p style="color:var(--muted);font-size:.9rem">Cette action est irréversible.</p>`,async()=>{await deleteDoc(doc(db,'rangs',id));hideModal();});
+window.editRang=btn=>{const id=btn.dataset.id;const r=RANGS.find(x=>x.id===id);if(r)openRangModal(r);};
+window.delRang=btn=>{const id=btn.dataset.id,n=btn.dataset.nom;showModal(`Supprimer "${n}" ?`,`<p style="color:var(--muted);font-size:.9rem">Cette action est irréversible.</p>`,async()=>{await deleteDoc(doc(db,'rangs',id));hideModal();})};
 
 function openRangModal(r){
   let sc=r?.couleur||COLS[0];
@@ -727,7 +727,7 @@ function openRangModal(r){
       <div class="pgrid">${Object.entries(PL).map(([k,l])=>`<label class="ptog${r?.permissions?.[k]?' on':''}" id="pt_${k}" onclick="window.tp('${k}')"><input type="checkbox"${r?.permissions?.[k]?' checked':''}><div class="pd"></div><span class="ptl">${l}</span></label>`).join('')}</div>
     </div>
     <div class="mf"><label class="ml">Objets déclarables en production</label>
-      <div class="ilist" id="ilist">${(r?.objetsProduction||[]).map(i=>`<span class="ichip">${i}<span class="icr" onclick="window.ri('${i.replace(/'/g,'\\'')}')">✕</span></span>`).join('')}</div>
+      <div class="ilist" id="ilist">${(r?.objetsProduction||[]).map(i=>`<span class="ichip">${i}<span class="icr" onclick="window.ri(this)">&#10005;</span></span>`).join('')}</div>
       <div class="air"><input id="rii" type="text" class="inp" placeholder="Nom de l'objet…" style="flex:1"/><button class="btn-s" style="font-size:.78rem;padding:.38rem .75rem" onclick="window.ai()">+ Ajouter</button></div>
     </div>`;
   showModal(r?`Modifier "${r.nom}"`:'Créer un rang',html,async()=>{
@@ -741,8 +741,8 @@ function openRangModal(r){
   });
   window.pc=c=>{sc=c;document.querySelectorAll('.cd').forEach(d=>d.classList.toggle('sel',d.dataset.c===c));};
   window.tp=k=>{$(`pt_${k}`)?.classList.toggle('on');};
-  window.ai=()=>{const v=$('rii').value.trim();if(!v)return;$('ilist').innerHTML+=`<span class="ichip">${v}<span class="icr" onclick="window.ri('${v.replace(/'/g,'\\'')}')">✕</span></span>`;$('rii').value='';};
-  window.ri=v=>{$('ilist').querySelectorAll('.ichip').forEach(c=>{if(c.textContent.replace('✕','').trim()===v)c.remove();});};
+  window.ai=()=>{const v=$("rii").value.trim();if(!v)return;$("ilist").innerHTML+=`<span class="ichip">${v}<span class="icr" onclick="window.ri(this)">&#10005;</span></span>`;$("rii").value="";};
+  window.ri=btn=>{btn.closest('.ichip')?.remove();};
   $('rii').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();window.ai();}});
 }
 
@@ -751,7 +751,7 @@ function renderUsers(){
   if(!USERS.length){$('users-list').innerHTML='<div class="empty"><div class="ei">👤</div>Aucun utilisateur</div>';return;}
   $('users-list').innerHTML=USERS.map(u=>{
     const rg=RANGS.find(r=>r.id===u.rangId);
-    return`<div class="urow"><div class="urn">${u.nomRP||'—'}</div><div class="ure">${u.email||'—'}</div><div style="flex:1">${u.role==='admin'?'<span class="bdg bgd">👑 Admin</span>':rg?`<span class="bdg" style="background:${rg.couleur}22;color:${rg.couleur}">${rg.nom}</span>`:'<span class="bdg bgr">Sans rang</span>'}</div><div class="ura">${u.role!=='admin'?`<button class="btn-s" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.editUser('${u.id}')">✏️</button><button class="btn-d" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.delUser('${u.id}','${(u.nomRP||'').replace(/'/g,'\\'')}')">🗑️</button>`:''}</div></div>`;
+    return`<div class="urow"><div class="urn">${u.nomRP||'—'}</div><div class="ure">${u.email||'—'}</div><div style="flex:1">${u.role==='admin'?'<span class="bdg bgd">👑 Admin</span>':rg?`<span class="bdg" style="background:${rg.couleur}22;color:${rg.couleur}">${rg.nom}</span>`:'<span class="bdg bgr">Sans rang</span>'}</div><div class="ura">${u.role!=='admin'?`<button class="btn-s" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.editUser(this)" data-id="${u.id}">✏️</button><button class="btn-d" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.delUser(this)" data-id="${u.id}" data-nom="${u.nomRP||''}"">🗑️</button>`:''}</div></div>`;
   }).join('');
 }
 
