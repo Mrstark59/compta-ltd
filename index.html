@@ -308,7 +308,7 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
         <div id="stk-cards" class="sgrid"></div>
         <div class="card"><div class="ctitle">Mouvements récents</div>
           <div class="fb" style="margin-top:.5rem"><input type="text" id="fss" class="fi" placeholder="🔍  Item ou employé…"/><select id="fst" class="fs"><option value="">Tous</option><option value="add">Ajouts</option><option value="remove">Retraits</option></select></div>
-          <div class="tw"><table><thead><tr><th>Date</th><th>Item</th><th>Mouv.</th><th>Qté</th><th>Employé RP</th></tr></thead><tbody id="stkb"></tbody></table></div>
+          <div class="tw"><table><thead><tr><th>Date</th><th>Item</th><th>Mouv.</th><th>Qté</th><th>Employé</th></tr></thead><tbody id="stkb"></tbody></table></div>
         </div>
       </section>
 
@@ -344,6 +344,17 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
         <div id="prstats" class="srow"></div>
         <div class="card"><div class="ctitle">Déclarations</div><div class="tw"><table><thead><tr><th>Date</th><th>Employé</th><th>Item</th><th>Quantité</th></tr></thead><tbody id="prb"></tbody></table></div></div>
       </section>
+
+      <!-- PRODUITS (admin) -->
+      <section id="tab-produits" class="tab">
+        <div class="ptitle">Catalogue Produits</div>
+        <div class="psub">Créez vos produits déclarables — ils seront ensuite attribués aux rangs</div>
+        <div style="margin-bottom:1.25rem"><button class="btn-s" id="btn-cp">+ Créer un produit</button></div>
+        <div id="produits-grid" style="display:grid;gap:.75rem;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
+          <div class="loader"><span class="spin"></span>Chargement…</div>
+        </div>
+      </section>
+
 
       <!-- RANGS (admin) -->
       <section id="tab-rangs" class="tab">
@@ -435,7 +446,7 @@ const auth=getAuth(mainApp),secAuth=getAuth(secApp),db=getFirestore(mainApp);
 
 // ════ STATE ════
 let aUser=null,uProf=null,uRang=null;
-let TX=[],FAC=[],STK=[],SVC=[],PROD=[],RANGS=[],USERS=[],unsubs=[];
+let TX=[],FAC=[],STK=[],SVC=[],PROD=[],RANGS=[],USERS=[],produits=[],unsubs=[];
 let selectedWeekOffset=0; // 0=current, -1=last week, etc.
 
 // ════ WEEK SYSTEM ════
@@ -528,7 +539,7 @@ onAuthStateChanged(auth,async u=>{
 
 async function loadProf(uid){
   const s=await getDoc(doc(db,'users',uid));
-  uProf=s.exists()?s.data():{role:'admin',nomRP:'',email:aUser.email};
+  uProf=s.exists()?s.data():{role:'admin',nomJeu:'',email:aUser.email};
   if(uProf.rangId&&uProf.role!=='admin'){
     const rs=await getDoc(doc(db,'rangs',uProf.rangId));
     if(rs.exists())uRang={id:rs.id,...rs.data()};
@@ -556,7 +567,7 @@ function setup(){
     document.getElementById('tb-rang').innerHTML=`<span class="u-rang-tb" style="background:${c}22;color:${c};border:1px solid ${c}44">${n}</span>`;
     const sh=(id,v)=>{const el=document.getElementById(id);if(el)el.style.display=v?'flex':'none';};
     sh('vn-prod',p.production);sh('vn-svc',p.services);sh('vn-sal',p.salaries);sh('vn-fac',p.factures);
-    document.getElementById('vt-name').textContent=`Mon Tableau — ${uProf.nomRP||''}`;
+    document.getElementById('vt-name').textContent=`Mon Tableau — ${uProf.nomJeu||''}`;
     buildProdDropdown();
     swTab('mon-tableau');
   }
@@ -579,6 +590,8 @@ function startListeners(){
   unsubs.push(onSnapshot(query(collection(db,'stock_mouvements'),orderBy('timestamp','desc')),s=>{STK=s.docs.map(d=>({id:d.id,...d.data()}));renderStock();}));
   unsubs.push(onSnapshot(query(collection(db,'services'),orderBy('debut','desc')),s=>{SVC=s.docs.map(d=>({id:d.id,...d.data()}));renderSalaries();if(!isAdmin){renderMyServices();renderVendorTableau();}}));
   unsubs.push(onSnapshot(query(collection(db,'productions'),orderBy('timestamp','desc')),s=>{PROD=s.docs.map(d=>({id:d.id,...d.data()}));renderProdRecap();if(!isAdmin)renderMyProd();}));
+  // Produits catalogue — needed by admin AND vendor
+  unsubs.push(onSnapshot(query(collection(db,'produits'),orderBy('nom')),s=>{produits=s.docs.map(d=>({id:d.id,...d.data()}));if(isAdmin){renderProduits();renderRangs();}else{buildProdDropdown();}}));
   if(isAdmin){
     unsubs.push(onSnapshot(query(collection(db,'rangs'),orderBy('nom')),s=>{RANGS=s.docs.map(d=>({id:d.id,...d.data()}));renderRangs();}));
     unsubs.push(onSnapshot(collection(db,'users'),s=>{USERS=s.docs.map(d=>({id:d.id,...d.data()}));renderUsers();}));
@@ -634,9 +647,9 @@ function renderStock(){
   const m={};for(const x of STK){const i=x.item||'?';if(!m[i])m[i]={t:0,a:0,r:0};if(x.type==='add'){m[i].t+=x.count||0;m[i].a+=x.count||0;}else{m[i].t-=x.count||0;m[i].r+=x.count||0;}}
   $('stk-cards').innerHTML=Object.entries(m).sort((a,b)=>b[1].t-a[1].t).map(([i,d])=>`<div class="sk"><div class="skn">${i}</div><div class="skq" style="color:${d.t>0?'var(--pl)':d.t<0?'var(--red)':'var(--muted)'}">${d.t}</div><div class="skd"><span style="color:var(--green)">+${d.a}</span><span style="color:var(--red)">-${d.r}</span></div></div>`).join('')||'<div class="empty"><div class="ei">📦</div>Aucun mouvement</div>';
   let d=[...STK];
-  if(sr)d=d.filter(x=>(x.item||'').toLowerCase().includes(sr)||(x.properName||'').toLowerCase().includes(sr));
+  if(sr)d=d.filter(x=>(x.item||'').toLowerCase().includes(sr)||(x.nomJeu||'').toLowerCase().includes(sr));
   if(tp)d=d.filter(x=>x.type===tp);
-  $('stkb').innerHTML=d.slice(0,30).map(x=>`<tr><td class="tm">${x.date||fmtD(x.timestamp)}</td><td style="font-weight:600">${x.item||'—'}</td><td><span class="bdg ${x.type==='add'?'bg':'br'}">${x.type==='add'?'+':'-'}</span></td><td class="tmono" style="color:${x.type==='add'?'var(--green)':'var(--red)'}">${x.type==='add'?'+':'-'}${x.count||0}</td><td class="tm">${x.properName||x.name||'—'}</td></tr>`).join('')||'<tr><td colspan="5"><div class="empty"><div class="ei">📦</div>Aucun mouvement</div></td></tr>';
+  $('stkb').innerHTML=d.slice(0,30).map(x=>`<tr><td class="tm">${x.date||fmtD(x.timestamp)}</td><td style="font-weight:600">${x.item||'—'}</td><td><span class="bdg ${x.type==='add'?'bg':'br'}">${x.type==='add'?'+':'-'}</span></td><td class="tmono" style="color:${x.type==='add'?'var(--green)':'var(--red)'}">${x.type==='add'?'+':'-'}${x.count||0}</td><td class="tm">${x.nomJeu||x.name||'—'}</td></tr>`).join('')||'<tr><td colspan="5"><div class="empty"><div class="ei">📦</div>Aucun mouvement</div></td></tr>';
 }
 ['fss','fst'].forEach(id=>$(id)?.addEventListener('input',renderStock));
 
@@ -659,7 +672,7 @@ function renderSalaries(){
   }
   const rows=Object.entries(empMap).sort((a,b)=>b[1].ca-a[1].ca);
   // Get rang for each employee
-  const getRang=nom=>{const u=USERS.find(u=>u.nomRP===nom);const r=RANGS.find(r=>r.id===u?.rangId);return r?`<span class="bdg" style="background:${r.couleur||'#7c3aed'}22;color:${r.couleur||'#7c3aed'}">${r.nom}</span>`:'<span class="bdg bgr">—</span>';};
+  const getRang=nom=>{const u=USERS.find(u=>u.nomJeu===nom);const r=RANGS.find(r=>r.id===u?.rangId);return r?`<span class="bdg" style="background:${r.couleur||'#7c3aed'}22;color:${r.couleur||'#7c3aed'}">${r.nom}</span>`:'<span class="bdg bgr">—</span>';};
   $('sal-body').innerHTML=rows.length?rows.map(([n,d])=>`
     <tr>
       <td style="font-weight:700">${n}</td>
@@ -688,7 +701,53 @@ function renderProdRecap(){
   const d=weekPROD();
   const im={};for(const x of d)im[x.item||'?']=(im[x.item||'?']||0)+(x.quantite||0);
   $('prstats').innerHTML=Object.entries(im).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([i,q])=>`<div class="sc p"><div class="sl">${i}</div><div class="sv">${fmtN(q)}</div><div class="ss">unités</div></div>`).join('');
-  $('prb').innerHTML=d.map(x=>`<tr><td class="tm">${fmtD(x.timestamp)}</td><td style="font-weight:600">${x.nomRP||'—'}</td><td>${x.item||'—'}</td><td class="tmono" style="color:var(--pl)">${x.quantite||0}</td></tr>`).join('')||'<tr><td colspan="4"><div class="empty"><div class="ei">🏭</div>Aucune déclaration</div></td></tr>';
+  $('prb').innerHTML=d.map(x=>`<tr><td class="tm">${fmtD(x.timestamp)}</td><td style="font-weight:600">${x.nomJeu||'—'}</td><td>${x.item||'—'}</td><td class="tmono" style="color:var(--pl)">${x.quantite||0}</td></tr>`).join('')||'<tr><td colspan="4"><div class="empty"><div class="ei">🏭</div>Aucune déclaration</div></td></tr>';
+}
+
+
+// ════ PRODUITS ════
+function renderProduits(){
+  const grid = document.getElementById('produits-grid');
+  if(!grid) return;
+  if(!produits.length){
+    grid.innerHTML='<div class="empty"><div class="ei">🏷️</div>Aucun produit créé</div>';
+    return;
+  }
+  grid.innerHTML = produits.map(p => `
+    <div class="card" style="position:relative">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem">
+        <div style="font-family:Rajdhani,sans-serif;font-size:1rem;font-weight:700">${p.nom}</div>
+        <div style="display:flex;gap:.4rem">
+          <button class="btn-s" style="font-size:.72rem;padding:.3rem .6rem" onclick="window.editProduit(this)" data-id="${p.id}">✏️</button>
+          <button class="btn-d" style="font-size:.72rem;padding:.3rem .6rem" onclick="window.delProduit(this)" data-id="${p.id}" data-nom="${p.nom}">🗑️</button>
+        </div>
+      </div>
+      <div style="font-size:.78rem;color:var(--muted)">Prix unitaire</div>
+      <div style="font-family:Rajdhani,sans-serif;font-size:1.4rem;font-weight:700;color:var(--teal)">${p.prix > 0 ? fmt(p.prix) : '—'}</div>
+    </div>`).join('');
+}
+
+document.getElementById('btn-cp')?.addEventListener('click', () => openProduitModal(null));
+window.editProduit = btn => { const p = produits.find(x => x.id === btn.dataset.id); if(p) openProduitModal(p); };
+window.delProduit = btn => {
+  showModal(`Supprimer "${btn.dataset.nom}" ?`, '<p style="color:var(--muted);font-size:.9rem">Ce produit sera retiré de tous les rangs.</p>', async () => {
+    await deleteDoc(doc(db,'produits',btn.dataset.id));
+    hideModal();
+  });
+};
+
+function openProduitModal(p){
+  const html = `
+    <div class="mf"><label class="ml">Nom du produit</label><input id="pnom" type="text" class="inp" value="${p?.nom||''}" placeholder="Ex: Sandwich, Bidon essence…"/></div>
+    <div class="mf"><label class="ml">Prix unitaire (bonus par unité déclarée)</label><input id="pprix" type="number" min="0" class="inp" value="${p?.prix||0}" placeholder="0"/><div style="font-size:.75rem;color:var(--muted);margin-top:.3rem">Mettre 0 si pas de bonus</div></div>`;
+  showModal(p ? `Modifier "${p.nom}"` : 'Créer un produit', html, async () => {
+    const nom = document.getElementById('pnom').value.trim();
+    const prix = parseInt(document.getElementById('pprix').value) || 0;
+    if(!nom){ alert('Nom obligatoire'); return; }
+    if(p) await setDoc(doc(db,'produits',p.id), {nom, prix}, {merge:true});
+    else await addDoc(collection(db,'produits'), {nom, prix, createdAt: serverTimestamp()});
+    hideModal();
+  });
 }
 
 // ════ RANGS ════
@@ -724,24 +783,26 @@ function openRangModal(r){
     <div class="mf"><label class="ml">Nom du rang</label><input id="rn" type="text" class="inp" value="${r?.nom||''}" placeholder="Ex: Vendeur Confirmé"/></div>
     <div class="mf"><label class="ml">Couleur</label><div class="cpr" id="cpr">${COLS.map(c=>`<div class="cd${c===sc?' sel':''}" style="background:${c}" data-c="${c}" onclick="window.pc('${c}')"></div>`).join('')}</div></div>
     <div class="mf"><label class="ml">Onglets visibles</label>
-      <div class="pgrid">${Object.entries(PL).map(([k,l])=>`<label class="ptog${r?.permissions?.[k]?' on':''}" id="pt_${k}" onclick="window.tp('${k}')"><input type="checkbox"${r?.permissions?.[k]?' checked':''}><div class="pd"></div><span class="ptl">${l}</span></label>`).join('')}</div>
+      <div class="pgrid">${Object.entries(PL).map(([k,l])=>`<label class="ptog${r?.permissions?.[k]?' on':''}" id="pt_${k}"><input type="checkbox"${r?.permissions?.[k]?' checked':''} onchange="window.tp('${k}',this.checked)"><div class="pd"></div><span class="ptl">${l}</span></label>`).join('')}</div>
     </div>
-    <div class="mf"><label class="ml">Objets déclarables en production</label>
-      <div class="ilist" id="ilist">${(r?.objetsProduction||[]).map(i=>`<span class="ichip">${i}<span class="icr" onclick="window.ri(this)">&#10005;</span></span>`).join('')}</div>
-      <div class="air"><input id="rii" type="text" class="inp" placeholder="Nom de l'objet…" style="flex:1"/><button class="btn-s" style="font-size:.78rem;padding:.38rem .75rem" onclick="window.ai()">+ Ajouter</button></div>
+    <div class="mf"><label class="ml">Produits déclarables pour ce rang</label>
+      <div id="prod-checkboxes" style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-top:.25rem">
+        ${produits.length ? produits.map(p => `<label class="ptog${(r?.produitsIds||[]).includes(p.id)?' on':''}" id="pp_${p.id}" style="justify-content:space-between"><span>${p.nom}${p.prix>0?' (+'+p.prix+'$)':''}</span><input type="checkbox"${(r?.produitsIds||[]).includes(p.id)?' checked':''} onchange="window.tpp('${p.id}',this.checked)"></label>`).join('') : '<p style="color:var(--muted);font-size:.82rem">Aucun produit créé — va dans l\'onglet Produits d\'abord</p>'}
+      </div>
     </div>`;
   showModal(r?`Modifier "${r.nom}"`:'Créer un rang',html,async()=>{
     const nom=$('rn').value.trim();if(!nom){alert('Nom obligatoire');return;}
     const ps={};Object.keys(PL).forEach(k=>{ps[k]=$(`pt_${k}`)?.classList.contains('on')||false;});
-    const its=[...$('ilist').querySelectorAll('.ichip')].map(c=>c.textContent.replace('✕','').trim());
-    const data={nom,couleur:sc,permissions:ps,objetsProduction:its};
+    const pids=produits.filter(p=>document.getElementById('pp_'+p.id)?.querySelector('input')?.checked).map(p=>p.id);
+    const data={nom,couleur:sc,permissions:ps,produitsIds:pids};
     if(r)await setDoc(doc(db,'rangs',r.id),data,{merge:true});
     else{data.createdAt=serverTimestamp();await addDoc(collection(db,'rangs'),data);}
     hideModal();
   });
   window.pc=c=>{sc=c;document.querySelectorAll('.cd').forEach(d=>d.classList.toggle('sel',d.dataset.c===c));};
-  window.tp=k=>{$(`pt_${k}`)?.classList.toggle('on');};
-  window.ai=()=>{const v=$("rii").value.trim();if(!v)return;$("ilist").innerHTML+=`<span class="ichip">${v}<span class="icr" onclick="window.ri(this)">&#10005;</span></span>`;$("rii").value="";};
+  window.tp=(k,checked)=>{const el=document.getElementById('pt_'+k);if(el)el.classList.toggle('on',checked);};
+  window.tpp=(id,checked)=>{const el=document.getElementById('pp_'+id);if(el)el.classList.toggle('on',checked);};
+  window.ai=()=>{};
   window.ri=btn=>{btn.closest('.ichip')?.remove();};
   $('rii').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();window.ai();}});
 }
@@ -751,7 +812,7 @@ function renderUsers(){
   if(!USERS.length){$('users-list').innerHTML='<div class="empty"><div class="ei">👤</div>Aucun utilisateur</div>';return;}
   $('users-list').innerHTML=USERS.map(u=>{
     const rg=RANGS.find(r=>r.id===u.rangId);
-    return`<div class="urow"><div class="urn">${u.nomRP||'—'}</div><div class="ure">${u.email||'—'}</div><div style="flex:1">${u.role==='admin'?'<span class="bdg bgd">👑 Admin</span>':rg?`<span class="bdg" style="background:${rg.couleur}22;color:${rg.couleur}">${rg.nom}</span>`:'<span class="bdg bgr">Sans rang</span>'}</div><div class="ura">${u.role!=='admin'?`<button class="btn-s" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.editUser(this)" data-id="${u.id}">✏️</button><button class="btn-d" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.delUser(this)" data-id="${u.id}" data-nom="${u.nomRP||''}"">🗑️</button>`:''}</div></div>`;
+    return`<div class="urow"><div class="urn">${u.nomJeu||'—'}</div><div class="ure">${u.email||'—'}</div><div style="flex:1">${u.role==='admin'?'<span class="bdg bgd">👑 Admin</span>':rg?`<span class="bdg" style="background:${rg.couleur}22;color:${rg.couleur}">${rg.nom}</span>`:'<span class="bdg bgr">Sans rang</span>'}</div><div class="ura">${u.role!=='admin'?`<button class="btn-s" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.editUser(this)" data-id="${u.id}">✏️</button><button class="btn-d" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.delUser(this)" data-id="${u.id}" data-nom="${u.nomJeu||''}"">🗑️</button>`:''}</div></div>`;
   }).join('');
 }
 
@@ -762,17 +823,17 @@ window.delUser=(id,n)=>showModal(`Supprimer "${n}" ?`,`<p style="color:var(--mut
 function openUserModal(u){
   const opts=RANGS.map(r=>`<option value="${r.id}"${u?.rangId===r.id?' selected':''}>${r.nom}</option>`).join('');
   const html=`
-    <div class="mf"><label class="ml">Nom RP (doit correspondre au nom Discord)</label><input id="un" type="text" class="inp" value="${u?.nomRP||''}" placeholder="Ex: Kayla Moreno"/></div>
+    <div class="mf"><label class="ml">Nom en jeu (doit correspondre au nom Discord)</label><input id="un" type="text" class="inp" value="${u?.nomJeu||''}" placeholder="Ex: Kayla Moreno"/></div>
     ${!u?`<div class="mf"><label class="ml">Email</label><input id="ue" type="email" class="inp" placeholder="email@exemple.com"/></div><div class="mf"><label class="ml">Mot de passe</label><input id="up" type="password" class="inp" placeholder="Min. 6 caractères"/></div>`:''}
     <div class="mf"><label class="ml">Rang</label><select id="ur" class="inp fs" style="width:100%"><option value="">— Choisir un rang —</option>${opts}</select></div>`;
-  showModal(u?`Modifier ${u.nomRP}`:'Créer un compte',html,async()=>{
-    const nomRP=$('un').value.trim(),rangId=$('ur').value;
-    if(!nomRP){alert('Nom RP obligatoire');return;}
-    if(u){await setDoc(doc(db,'users',u.id),{nomRP,rangId},{merge:true});}
+  showModal(u?`Modifier ${u.nomJeu}`:'Créer un compte',html,async()=>{
+    const nomJeu=$('un').value.trim(),rangId=$('ur').value;
+    if(!nomJeu){alert('Nom en jeu obligatoire');return;}
+    if(u){await setDoc(doc(db,'users',u.id),{nomJeu,rangId},{merge:true});}
     else{
       const email=$('ue').value.trim(),pass=$('up').value;
       if(!email||!pass){alert('Email et mot de passe obligatoires');return;}
-      try{const cr=await createUserWithEmailAndPassword(secAuth,email,pass);await signOut(secAuth);await setDoc(doc(db,'users',cr.user.uid),{email,nomRP,rangId,role:'user',createdAt:serverTimestamp()});}
+      try{const cr=await createUserWithEmailAndPassword(secAuth,email,pass);await signOut(secAuth);await setDoc(doc(db,'users',cr.user.uid),{email,nomJeu,rangId,role:'user',createdAt:serverTimestamp()});}
       catch(e){alert('Erreur : '+e.message);return;}
     }
     hideModal();
@@ -782,7 +843,7 @@ function openUserModal(u){
 // ════ VENDOR TABLEAU ════
 function renderVendorTableau(){
   if(!uProf||uProf.role==='admin')return;
-  const nom=uProf.nomRP||'';
+  const nom=uProf.nomJeu||'';
   const mf=weekFAC().filter(f=>f.emetteur===nom&&f.status==='payee');
   const ca=mf.reduce((s,f)=>s+(f.montant||0),0),sal=Math.round(ca*.3);
   const ms=weekSVC().filter(s=>s.employeNom===nom&&s.duree);
@@ -798,7 +859,7 @@ function renderVendorTableau(){
 // ════ MES SERVICES ════
 function renderMyServices(){
   if(!uProf||uProf.role==='admin')return;
-  const nom=uProf.nomRP||'';
+  const nom=uProf.nomJeu||'';
   const ms=weekSVC().filter(s=>s.employeNom===nom&&s.duree);
   const tm=ms.reduce((s,x)=>s+(x.duree||0),0);
   $('svc-total').textContent=fmtDur(tm);$('svc-nb').textContent=ms.length;
@@ -807,7 +868,8 @@ function renderMyServices(){
 
 // ════ PRODUCTION ════
 function buildProdDropdown(){
-  const items=uRang?.objetsProduction||[];
+  const pids=uRang?.produitsIds||[];
+  const items=produits.filter(p=>pids.includes(p.id));
   const sel=$('prod-item');
   if(!sel)return;
   sel.innerHTML='<option value="">— Choisir un objet —</option>';
@@ -821,7 +883,7 @@ $('prod-submit')?.addEventListener('click',async()=>{
   const msg=$('prod-msg');
   if(!item){msg.style.color='var(--red)';msg.textContent='Choisissez un objet.';setTimeout(()=>msg.textContent='',2500);return;}
   if(qty<=0){msg.style.color='var(--red)';msg.textContent='Entrez une quantité valide.';setTimeout(()=>msg.textContent='',2500);return;}
-  await addDoc(collection(db,'productions'),{userId:aUser.uid,nomRP:uProf.nomRP||'',item,quantite:qty,timestamp:serverTimestamp()});
+  await addDoc(collection(db,'productions'),{userId:aUser.uid,nomJeu:uProf.nomJeu||'',item,quantite:qty,timestamp:serverTimestamp()});
   $('prod-item').value='';$('prod-qty').value='';
   msg.style.color='var(--green)';msg.textContent=`✅ ${qty}x ${item} déclaré${qty>1?'s':''}  !`;
   setTimeout(()=>msg.textContent='',3000);
