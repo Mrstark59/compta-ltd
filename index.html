@@ -429,7 +429,7 @@ import{getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged,createUserW
 import{getFirestore,collection,doc,onSnapshot,query,orderBy,setDoc,addDoc,deleteDoc,serverTimestamp,getDoc,where}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 // ★ CONFIG FIREBASE — Remplace ces valeurs
-const cfg={apiKey:"VOTRE_API_KEY",authDomain:"VOTRE_AUTH_DOMAIN",projectId:"VOTRE_PROJECT_ID",storageBucket:"VOTRE_STORAGE_BUCKET",messagingSenderId:"VOTRE_MESSAGING_SENDER_ID",appId:"VOTRE_APP_ID"};
+const cfg={apiKey:"AIzaSyDzfdB0NfF_CtDSG84RrEDfMSBz_0qDkAo",authDomain:"ltd-compta-178a1.firebaseapp.com",projectId:"ltd-compta-178a1",storageBucket:"ltd-compta-178a1.firebasestorage.app",messagingSenderId:"461092539963",appId:"1:461092539963:web:38931222e2e8231950961e"};
 const mainApp=initializeApp(cfg,'main'),secApp=initializeApp(cfg,'sec');
 const auth=getAuth(mainApp),secAuth=getAuth(secApp),db=getFirestore(mainApp);
 
