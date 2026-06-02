@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LTD Grove Street — Comptabilité</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Mulish:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07030f;--bg2:#0d0520;--card:rgba(18,8,45,.8);--card2:rgba(24,12,58,.95);--border:rgba(120,75,220,.18);--border2:rgba(140,90,255,.38);--purple:#7c3aed;--purple2:#5b21b6;--pl:#a78bfa;--gold:#f59e0b;--gl:#fcd34d;--green:#10b981;--gbg:rgba(16,185,129,.12);--red:#ef4444;--rbg:rgba(239,68,68,.12);--blue:#6366f1;--teal:#14b8a6;--tbg:rgba(20,184,166,.12);--text:#ede9fe;--muted:#7c6f9e;--dim:#3d3460}
+*{margin:0;padding:0;box-sizing:border-box}html,body{height:100%;overflow:hidden}
+body{font-family:'Mulish',sans-serif;background:var(--bg);color:var(--text)}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+background:radial-gradient(ellipse 90% 60% at 10% -10%,rgba(90,30,180,.18) 0%,transparent 55%),
+radial-gradient(ellipse 70% 50% at 90% 110%,rgba(60,20,140,.14) 0%,transparent 55%),
+repeating-linear-gradient(0deg,transparent,transparent 60px,rgba(120,75,220,.025) 60px,rgba(120,75,220,.025) 61px),
+repeating-linear-gradient(90deg,transparent,transparent 60px,rgba(120,75,220,.025) 60px,rgba(120,75,220,.025) 61px)}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+.lw{display:flex;flex-direction:column;align-items:center;gap:2rem;width:100%;max-width:380px;padding:2rem}
+.bltd{font-family:'Rajdhani',sans-serif;font-size:3.5rem;font-weight:700;line-height:1;letter-spacing:4px;background:linear-gradient(135deg,#a78bfa,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.bgs{font-size:.75rem;font-weight:600;letter-spacing:6px;color:var(--muted);text-transform:uppercase}
+.btag{display:inline-block;margin-top:.5rem;font-size:.7rem;letter-spacing:4px;text-transform:uppercase;color:var(--gold);font-weight:700}
+.lcard{width:100%;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;backdrop-filter:blur(20px);display:flex;flex-direction:column;gap:1rem}
+.lcard h2{font-family:'Rajdhani',sans-serif;font-size:1.1rem;font-weight:600;letter-spacing:2px;color:var(--muted);text-transform:uppercase;text-align:center}
+.inp{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;color:var(--text);font-family:'Mulish',sans-serif;font-size:.9rem;outline:none;transition:border-color .2s;width:100%}
+.inp:focus{border-color:var(--pl)}.inp::placeholder{color:var(--dim)}
+.btn-p{background:linear-gradient(135deg,var(--purple),var(--purple2));border:none;border-radius:8px;padding:.85rem;color:#fff;font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;letter-spacing:2px;cursor:pointer;transition:opacity .2s;text-transform:uppercase;width:100%}
+.btn-p:hover{opacity:.9}
+.btn-s{background:rgba(124,58,237,.15);border:1px solid var(--border2);border-radius:8px;padding:.55rem 1.1rem;color:var(--pl);font-family:'Rajdhani',sans-serif;font-size:.85rem;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;text-transform:uppercase;white-space:nowrap}
+.btn-s:hover{background:rgba(124,58,237,.28)}
+.btn-d{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:.5rem .9rem;color:var(--red);font-family:'Rajdhani',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .15s;text-transform:uppercase}
+.btn-d:hover{background:rgba(239,68,68,.28)}
+.err{font-size:.8rem;color:var(--red);text-align:center;min-height:1rem}
+
+/* APP */
+#app{display:none;height:100vh;flex-direction:column;position:relative;z-index:1}
+.topbar{height:52px;flex-shrink:0;background:rgba(8,3,22,.95);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.5rem;gap:1rem;backdrop-filter:blur(20px)}
+.topbar-brand{font-family:'Rajdhani',sans-serif;font-size:1.2rem;font-weight:700;letter-spacing:3px;background:linear-gradient(135deg,#a78bfa,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.topbar-sep{width:1px;height:20px;background:var(--border)}
+.week-selector{display:flex;align-items:center;gap:.5rem}
+.week-lbl{font-size:.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.week-sel{background:rgba(124,58,237,.12);border:1px solid var(--border2);border-radius:7px;padding:.35rem .75rem;color:var(--pl);font-family:'Rajdhani',sans-serif;font-size:.9rem;font-weight:700;outline:none;cursor:pointer}
+.week-sel option{background:#1a0a3a;color:var(--text)}
+.week-badge{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);border-radius:5px;padding:.2rem .55rem;font-size:.68rem;font-weight:700;color:var(--green);letter-spacing:1px;text-transform:uppercase}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:.75rem}
+.u-rang-tb{display:inline-block;padding:.2rem .6rem;border-radius:4px;font-size:.65rem;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.u-email-tb{font-size:.75rem;color:var(--muted)}
+.lobtn{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:.4rem .75rem;color:var(--red);cursor:pointer;font-family:'Mulish',sans-serif;font-size:.72rem;font-weight:700;transition:all .15s}
+.lobtn:hover{background:rgba(239,68,68,.2)}
+
+.app-body{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:215px;flex-shrink:0;background:rgba(8,3,22,.9);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:1rem 0;backdrop-filter:blur(20px);overflow-y:auto}
+.sidebar::-webkit-scrollbar{width:4px}.sidebar::-webkit-scrollbar-thumb{background:rgba(120,75,220,.2);border-radius:2px}
+.nav-sec{padding:.75rem 1.25rem .3rem;font-size:.6rem;letter-spacing:3px;text-transform:uppercase;color:var(--dim);font-weight:700}
+.nb{display:flex;align-items:center;gap:.65rem;width:100%;padding:.65rem 1.25rem;background:none;border:none;border-left:3px solid transparent;color:var(--muted);cursor:pointer;font-family:'Mulish',sans-serif;font-size:.84rem;font-weight:600;transition:all .15s;text-align:left}
+.nb:hover{color:var(--text);background:rgba(124,58,237,.08)}.nb.active{color:var(--pl);border-left-color:var(--pl);background:rgba(124,58,237,.12)}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;padding:1.75rem 2rem 3rem}
+.main::-webkit-scrollbar{width:6px}.main::-webkit-scrollbar-thumb{background:rgba(120,75,220,.3);border-radius:3px}
+.tab{display:none}.tab.active{display:block;animation:fi .2s ease}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ptitle{font-family:'Rajdhani',sans-serif;font-size:1.75rem;font-weight:700;letter-spacing:2px;margin-bottom:.2rem}
+.psub{font-size:.8rem;color:var(--muted);margin-bottom:1.5rem}
+.ld{display:inline-block;width:7px;height:7px;background:var(--green);border-radius:50%;animation:pu 2s infinite;margin-right:5px;vertical-align:middle}
+@keyframes pu{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(16,185,129,.4)}50%{opacity:.8;box-shadow:0 0 0 5px rgba(16,185,129,0)}}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.5rem;backdrop-filter:blur(10px)}
+.ctitle{font-family:'Rajdhani',sans-serif;font-size:.68rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:.75rem}
+
+/* STAT CARDS */
+.srow{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));margin-bottom:1.5rem}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.5rem;position:relative;overflow:hidden;transition:transform .15s}
+.sc:hover{transform:translateY(-2px)}.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.sc.g::before{background:linear-gradient(90deg,var(--green),transparent)}.sc.r::before{background:linear-gradient(90deg,var(--red),transparent)}
+.sc.p::before{background:linear-gradient(90deg,var(--pl),transparent)}.sc.gd::before{background:linear-gradient(90deg,var(--gold),transparent)}
+.sc.t::before{background:linear-gradient(90deg,var(--teal),transparent)}.sc.b::before{background:linear-gradient(90deg,var(--blue),transparent)}
+.sl{font-size:.67rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:.45rem}
+.sv{font-family:'Rajdhani',sans-serif;font-size:1.7rem;font-weight:700;line-height:1}
+.sc.g .sv{color:var(--green)}.sc.r .sv{color:var(--red)}.sc.p .sv{color:var(--pl)}.sc.gd .sv{color:var(--gold)}.sc.t .sv{color:var(--teal)}.sc.b .sv{color:#818cf8}
+.ss{font-size:.7rem;color:var(--muted);margin-top:.3rem}
+
+/* HERO */
+.hero{background:var(--card);border:1px solid rgba(124,58,237,.32);border-radius:16px;padding:1.75rem 2.5rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 70% 80% at 0% 50%,rgba(124,58,237,.12) 0%,transparent 70%)}
+.hl{font-size:.68rem;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--muted);margin-bottom:.45rem}
+.hv{font-family:'Rajdhani',sans-serif;font-size:3.2rem;font-weight:700;background:linear-gradient(135deg,var(--gl),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+.hmeta{display:flex;gap:2rem;margin-top:.9rem;flex-wrap:wrap}
+.hmi{font-size:.8rem;color:var(--muted)}.hmi span{font-weight:700}
+.up{color:var(--green)}.dn{color:var(--red)}
+.two-col{display:grid;grid-template-columns:1fr 1.6fr;gap:1rem}
+
+/* TABLES */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+thead th{text-align:left;padding:.5rem .75rem;font-size:.63rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+tbody tr{border-bottom:1px solid rgba(120,75,220,.07);transition:background .1s}tbody tr:hover{background:rgba(124,58,237,.06)}tbody tr:last-child{border-bottom:none}
+tbody td{padding:.55rem .75rem;vertical-align:middle}
+.tm{color:var(--muted);font-size:.78rem}.tmono{font-family:'Rajdhani',sans-serif;font-size:.9rem;font-weight:600}
+
+/* BADGES */
+.bdg{display:inline-block;padding:.15rem .55rem;border-radius:4px;font-size:.65rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+.bg{background:var(--gbg);color:var(--green)}.br{background:var(--rbg);color:var(--red)}
+.bp{background:rgba(124,58,237,.15);color:var(--pl)}.bgd{background:rgba(245,158,11,.15);color:var(--gold)}
+.bb{background:rgba(99,102,241,.12);color:#818cf8}.bt{background:var(--tbg);color:var(--teal)}.bgr{background:rgba(255,255,255,.06);color:var(--muted)}
+
+/* FILTERS */
+.fb{display:flex;flex-wrap:wrap;gap:.6rem;margin-bottom:1rem;align-items:center}
+.fs{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:7px;padding:.5rem .8rem;color:var(--text);font-family:'Mulish',sans-serif;font-size:.82rem;outline:none;transition:border-color .15s}
+.fs:focus{border-color:var(--pl)}.fs option{background:#1a0a3a}
+.fi{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:7px;padding:.5rem .8rem;color:var(--text);font-family:'Mulish',sans-serif;font-size:.82rem;outline:none;min-width:200px}
+.fi::placeholder{color:var(--dim)}
+
+/* REP BARS */
+.rr{display:flex;align-items:center;gap:.75rem;margin-bottom:.65rem}
+.rl{font-size:.78rem;color:var(--muted);width:130px;flex-shrink:0}
+.rbw{flex:1;background:rgba(255,255,255,.05);border-radius:3px;height:6px;overflow:hidden}
+.rb{height:100%;border-radius:3px;transition:width .8s ease}
+.rv{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.85rem;min-width:80px;text-align:right}
+
+/* STOCK */
+.sgrid{display:grid;gap:.75rem;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));margin-bottom:1.5rem}
+.sk{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem}
+.skn{font-size:.78rem;color:var(--muted);margin-bottom:.3rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.skq{font-family:'Rajdhani',sans-serif;font-size:1.6rem;font-weight:700;line-height:1}
+.skd{display:flex;gap:.5rem;margin-top:.35rem;font-size:.7rem}
+
+/* QUOTAS */
+.qgrid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));margin-bottom:1.5rem}
+.qcard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.2rem;position:relative;overflow:hidden;transition:transform .15s}
+.qcard:hover{transform:translateY(-2px)}.qcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--pl),transparent)}
+.qn{font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;margin-bottom:.7rem}
+.qs{display:flex;gap:1.2rem}.qsl{font-size:.64rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.qsv{font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;line-height:1}
+
+/* RANGS */
+.rgrid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(255px,1fr))}
+.rc{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .15s}.rc:hover{border-color:var(--border2)}
+.rch{padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between}
+.rcn{font-family:'Rajdhani',sans-serif;font-size:.95rem;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.rcb{padding:.75rem 1rem 1rem;border-top:1px solid var(--border)}
+.rp{display:flex;align-items:center;gap:.4rem;font-size:.75rem;color:var(--muted);margin-bottom:.22rem}
+.ritems{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.5rem}
+.rtag{background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.2);border-radius:4px;padding:.15rem .4rem;font-size:.68rem;color:var(--pl)}
+.ract{display:flex;gap:.5rem;margin-top:.75rem}
+
+/* USERS */
+.ugrid{display:flex;flex-direction:column;gap:.5rem}
+.urow{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.85rem 1.25rem;display:flex;align-items:center;gap:1rem;transition:border-color .15s}.urow:hover{border-color:var(--border2)}
+.urn{font-weight:700;font-size:.9rem;flex:1}.ure{font-size:.78rem;color:var(--muted);flex:1.5}
+.ura{display:flex;gap:.5rem;align-items:center}
+
+/* SERVICES */
+.svrow{display:flex;align-items:center;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid var(--border);font-size:.82rem}.svrow:last-child{border-bottom:none}
+
+/* PRODUCTION FORM */
+.prod-form{display:flex;flex-direction:column;gap:1rem;max-width:480px}
+.prod-row{display:flex;gap:.75rem;align-items:flex-end}
+.prod-sel{flex:2;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;color:var(--text);font-family:'Mulish',sans-serif;font-size:.88rem;outline:none;transition:border-color .15s}
+.prod-sel:focus{border-color:var(--pl)}.prod-sel option{background:#1a0a3a}
+.prod-qty{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;outline:none;transition:border-color .15s;text-align:center}
+.prod-qty:focus{border-color:var(--pl)}
+.prod-lbl{font-size:.68rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem}
+
+/* MODAL */
+#modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:1rem}
+#modal-overlay.open{display:flex}
+#modal-box{background:var(--card2);border:1px solid var(--border);border-radius:16px;padding:2rem;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;position:relative}
+#modal-box::-webkit-scrollbar{width:4px}#modal-box::-webkit-scrollbar-thumb{background:rgba(120,75,220,.3);border-radius:2px}
+.mt{font-family:'Rajdhani',sans-serif;font-size:1.2rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:1.25rem}
+.mf{margin-bottom:1rem}.ml{display:block;font-size:.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem}
+.ma{display:flex;gap:.75rem;margin-top:1.5rem;justify-content:flex-end}
+.mc{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem;transition:color .15s}.mc:hover{color:var(--text)}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.25rem}
+.ptog{display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:7px;cursor:pointer;transition:all .15s;user-select:none}
+.ptog:hover{border-color:var(--border2)}.ptog.on{background:rgba(124,58,237,.15);border-color:rgba(124,58,237,.4)}
+.ptog input{display:none}.pd{width:10px;height:10px;border-radius:50%;border:2px solid var(--dim);transition:all .15s}.ptog.on .pd{background:var(--pl);border-color:var(--pl)}
+.ptl{font-size:.78rem;font-weight:600}
+.ilist{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem;min-height:2rem}
+.ichip{display:flex;align-items:center;gap:.35rem;background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.3);border-radius:5px;padding:.2rem .5rem;font-size:.75rem;color:var(--pl)}
+.icr{cursor:pointer;opacity:.6}.icr:hover{opacity:1}
+.air{display:flex;gap:.5rem;margin-top:.5rem}
+.cpr{display:flex;gap:.6rem;margin-top:.25rem;flex-wrap:wrap}
+.cd{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s}.cd.sel{border-color:#fff;transform:scale(1.15)}
+
+.empty{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:.85rem}.ei{font-size:2.5rem;margin-bottom:.75rem}
+.loader{text-align:center;padding:2rem;color:var(--muted);font-size:.85rem}
+.spin{display:inline-block;width:18px;height:18px;border:2px solid rgba(124,58,237,.2);border-top-color:var(--pl);border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+@media(max-width:900px){.sidebar{width:185px}.two-col{grid-template-columns:1fr}}
+@media(max-width:680px){.sidebar{display:none}.main{padding:1rem 1rem 2rem}.hv{font-size:2.5rem}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="lw">
+    <div style="text-align:center">
+      <div class="bltd">LTD</div>
+      <div class="bgs">Grove Street</div>
+      <span class="btag">Comptabilité</span>
+    </div>
+    <div class="lcard">
+      <h2>Accès Sécurisé</h2>
+      <input id="le" type="email" class="inp" placeholder="Email" autocomplete="email"/>
+      <input id="lp" type="password" class="inp" placeholder="Mot de passe"/>
+      <button id="lb" class="btn-p">Se connecter</button>
+      <div id="lerr" class="err"></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none;flex-direction:column">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <span class="topbar-brand">LTD</span>
+    <div class="topbar-sep"></div>
+    <div class="week-selector">
+      <span class="week-lbl">Semaine</span>
+      <select id="week-sel" class="week-sel"></select>
+      <span id="week-current-badge" class="week-badge">EN COURS</span>
+    </div>
+    <div class="topbar-right">
+      <div id="tb-rang"></div>
+      <span id="tb-email" class="u-email-tb"></span>
+      <button id="lo-btn" class="lobtn">Déconnexion</button>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <!-- Admin nav -->
+      <div id="nav-admin" style="display:none">
+        <div class="nav-sec">Comptabilité</div>
+        <button class="nb active" data-tab="bilan">📊 Bilan</button>
+        <button class="nb" data-tab="transactions">💰 Transactions</button>
+        <button class="nb" data-tab="stock">📦 Stock</button>
+        <div class="nav-sec">Employés</div>
+        <button class="nb" data-tab="salaries">👥 Salariés</button>
+        <button class="nb" data-tab="factures">🧾 Factures</button>
+        <button class="nb" data-tab="prod-recap">🏭 Production</button>
+        <div class="nav-sec">Administration</div>
+        <button class="nb" data-tab="rangs">⭐ Rangs</button>
+        <button class="nb" data-tab="users">👤 Utilisateurs</button>
+      </div>
+      <!-- Vendor nav -->
+      <div id="nav-vendor" style="display:none">
+        <div class="nav-sec">Mon Espace</div>
+        <button class="nb active" data-tab="mon-tableau">📊 Mon Tableau</button>
+        <button class="nb" id="vn-prod"     data-tab="ma-prod"   style="display:none">🏭 Production</button>
+        <button class="nb" id="vn-svc"      data-tab="mes-svc"   style="display:none">⏱️ Mes Services</button>
+        <button class="nb" id="vn-sal"      data-tab="salaries"  style="display:none">👥 Salariés</button>
+        <button class="nb" id="vn-fac"      data-tab="factures"  style="display:none">🧾 Factures</button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <!-- BILAN (admin) -->
+      <section id="tab-bilan" class="tab active">
+        <div class="ptitle">Bilan Général</div>
+        <div class="psub"><span class="ld"></span>Données temps réel — <span id="b-week-lbl"></span></div>
+        <div class="hero">
+          <div class="hl">Solde Actuel</div>
+          <div class="hv" id="bsv">—</div>
+          <div class="hmeta">
+            <div class="hmi">Entrées &nbsp;<span class="up" id="bme">—</span></div>
+            <div class="hmi">Sorties &nbsp;<span class="dn" id="bms">—</span></div>
+            <div class="hmi">Transactions &nbsp;<span id="bmn">—</span></div>
+          </div>
+        </div>
+        <div class="srow">
+          <div class="sc g"><div class="sl">Ventes clients</div><div class="sv" id="bs1">0$</div><div class="ss" id="bs1n"></div></div>
+          <div class="sc r"><div class="sl">Dépenses</div><div class="sv" id="bs2">0$</div><div class="ss" id="bs2n"></div></div>
+          <div class="sc gd"><div class="sl">Essence</div><div class="sv" id="bs3">0$</div><div class="ss" id="bs3n"></div></div>
+          <div class="sc p"><div class="sl">Factures</div><div class="sv" id="bs4">0</div><div class="ss" id="bs4n"></div></div>
+        </div>
+        <div class="two-col">
+          <div class="card"><div class="ctitle">Répartition entrées</div><div id="brep"><div class="loader"><span class="spin"></span>Chargement…</div></div></div>
+          <div class="card"><div class="ctitle">Dernières transactions</div><div class="tw"><table><thead><tr><th>Date</th><th>Type</th><th>Montant</th><th>Catégorie</th><th>Personne</th></tr></thead><tbody id="brecent"></tbody></table></div></div>
+        </div>
+      </section>
+
+      <!-- TRANSACTIONS (admin) -->
+      <section id="tab-transactions" class="tab">
+        <div class="ptitle">Transactions</div><div class="psub" id="tx-week-lbl"></div>
+        <div class="fb">
+          <select id="ftt" class="fs"><option value="">Tous types</option><option value="entree">Entrées</option><option value="sortie">Sorties</option></select>
+          <select id="ftc" class="fs"><option value="">Toutes catégories</option><option value="vente_client">Vente client</option><option value="essence">Essence</option><option value="depense_facture">Dépense facture</option><option value="salaire">Salaire</option><option value="autre">Autre</option></select>
+          <input type="text" id="fts" class="fi" placeholder="🔍  Rechercher…"/>
+        </div>
+        <div class="card"><div class="tw"><table><thead><tr><th>Date</th><th>Type</th><th>Montant</th><th>Catégorie</th><th>Personne</th><th>Raison</th><th>Solde après</th></tr></thead><tbody id="txb"></tbody></table></div><div id="txc" style="margin-top:.75rem;font-size:.75rem;color:var(--muted)"></div></div>
+      </section>
+
+      <!-- STOCK (admin) -->
+      <section id="tab-stock" class="tab">
+        <div class="ptitle">Inventaire Stock</div><div class="psub">État global du stock — tous mouvements</div>
+        <div id="stk-cards" class="sgrid"></div>
+        <div class="card"><div class="ctitle">Mouvements récents</div>
+          <div class="fb" style="margin-top:.5rem"><input type="text" id="fss" class="fi" placeholder="🔍  Item ou employé…"/><select id="fst" class="fs"><option value="">Tous</option><option value="add">Ajouts</option><option value="remove">Retraits</option></select></div>
+          <div class="tw"><table><thead><tr><th>Date</th><th>Item</th><th>Mouv.</th><th>Qté</th><th>Employé RP</th></tr></thead><tbody id="stkb"></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- SALARIÉS (admin + assignable) -->
+      <section id="tab-salaries" class="tab">
+        <div class="ptitle">Salariés</div>
+        <div class="psub" id="sal-week-lbl"></div>
+        <div class="card"><div class="tw"><table>
+          <thead><tr><th>Employé</th><th>Rang</th><th>CA semaine</th><th>Salaire (30%)</th><th>Heures service</th><th>Nb factures</th></tr></thead>
+          <tbody id="sal-body"></tbody>
+        </table></div></div>
+      </section>
+
+      <!-- FACTURES (admin + assignable) -->
+      <section id="tab-factures" class="tab">
+        <div class="ptitle">Factures</div>
+        <div class="psub" id="fac-week-lbl"></div>
+        <div class="fb">
+          <input type="text" id="ffac-s" class="fi" placeholder="🔍  Vendeur ou raison…"/>
+          <select id="ffac-st" class="fs"><option value="">Tous statuts</option><option value="payee">Payées</option><option value="en_attente">En attente</option></select>
+        </div>
+        <div class="card"><div class="tw"><table>
+          <thead><tr><th>Date</th><th>Vendeur</th><th>Destinataire</th><th>Montant</th><th>Raison</th><th>Statut</th><th>Paiement</th></tr></thead>
+          <tbody id="fac-body"></tbody>
+        </table></div>
+        <div id="fac-total" style="margin-top:.75rem;font-size:.8rem;color:var(--muted);text-align:right"></div>
+        </div>
+      </section>
+
+      <!-- PROD RECAP (admin) -->
+      <section id="tab-prod-recap" class="tab">
+        <div class="ptitle">Récap Production</div><div class="psub" id="pr-week-lbl"></div>
+        <div id="prstats" class="srow"></div>
+        <div class="card"><div class="ctitle">Déclarations</div><div class="tw"><table><thead><tr><th>Date</th><th>Employé</th><th>Item</th><th>Quantité</th></tr></thead><tbody id="prb"></tbody></table></div></div>
+      </section>
+
+      <!-- RANGS (admin) -->
+      <section id="tab-rangs" class="tab">
+        <div class="ptitle">Gestion des Rangs</div><div class="psub">Créez les rangs, leurs permissions et leurs objets de production</div>
+        <div style="margin-bottom:1.25rem"><button class="btn-s" id="btn-cr">+ Créer un rang</button></div>
+        <div id="rangs-grid" class="rgrid"><div class="loader"><span class="spin"></span>Chargement…</div></div>
+      </section>
+
+      <!-- USERS (admin) -->
+      <section id="tab-users" class="tab">
+        <div class="ptitle">Gestion des Utilisateurs</div><div class="psub">Créez et gérez les comptes de votre équipe</div>
+        <div style="margin-bottom:1.25rem"><button class="btn-s" id="btn-cu">+ Créer un compte</button></div>
+        <div id="users-list" class="ugrid"><div class="loader"><span class="spin"></span>Chargement…</div></div>
+      </section>
+
+      <!-- MON TABLEAU (vendor) -->
+      <section id="tab-mon-tableau" class="tab">
+        <div class="ptitle" id="vt-name">Mon Tableau de bord</div>
+        <div class="psub" id="vt-week-lbl"></div>
+        <div class="srow">
+          <div class="sc g"><div class="sl">Chiffre d'affaires</div><div class="sv" id="vtca">—</div><div class="ss" id="vtcan"></div></div>
+          <div class="sc gd"><div class="sl">Salaire (30%)</div><div class="sv" id="vtsal">—</div></div>
+          <div class="sc t"><div class="sl">Heures de service</div><div class="sv" id="vthrs">—</div><div class="ss" id="vtmin"></div></div>
+          <div class="sc p"><div class="sl">Factures émises</div><div class="sv" id="vtnbf">—</div><div class="ss" id="vtnbfp"></div></div>
+        </div>
+        <div class="card"><div class="ctitle">Mes factures de la semaine</div><div class="tw"><table><thead><tr><th>Date</th><th>Destinataire</th><th>Montant</th><th>Raison</th><th>Statut</th></tr></thead><tbody id="vtfac"></tbody></table></div></div>
+      </section>
+
+      <!-- MA PRODUCTION (vendor) -->
+      <section id="tab-ma-prod" class="tab">
+        <div class="ptitle">Déclarer ma Production</div>
+        <div class="psub" id="mp-week-lbl"></div>
+        <div class="card" style="margin-bottom:1.25rem;max-width:540px">
+          <div class="ctitle">Nouvelle déclaration</div>
+          <div class="prod-form">
+            <div>
+              <div class="prod-lbl">Objet produit</div>
+              <select id="prod-item" class="prod-sel">
+                <option value="">— Choisir un objet —</option>
+              </select>
+            </div>
+            <div>
+              <div class="prod-lbl">Quantité produite</div>
+              <input id="prod-qty" type="number" min="1" class="prod-qty inp" placeholder="0" style="width:120px;text-align:center"/>
+            </div>
+            <button class="btn-p" id="prod-submit" style="max-width:200px">Déclarer</button>
+          </div>
+          <div id="prod-msg" style="margin-top:.75rem;font-size:.82rem;min-height:1rem"></div>
+        </div>
+        <div class="card"><div class="ctitle">Mes déclarations — semaine en cours</div><div class="tw"><table><thead><tr><th>Date</th><th>Item</th><th>Quantité</th></tr></thead><tbody id="myprb"></tbody></table></div></div>
+      </section>
+
+      <!-- MES SERVICES (vendor) -->
+      <section id="tab-mes-svc" class="tab">
+        <div class="ptitle">Mes Services</div>
+        <div class="psub" id="svc-week-lbl"></div>
+        <div class="srow">
+          <div class="sc t"><div class="sl">Total heures</div><div class="sv" id="svc-total">—</div></div>
+          <div class="sc p"><div class="sl">Sessions</div><div class="sv" id="svc-nb">—</div></div>
+        </div>
+        <div class="card"><div class="ctitle">Détail des sessions</div>
+          <div class="tw"><table><thead><tr><th>Début</th><th>Fin</th><th>Durée</th></tr></thead><tbody id="svc-body"></tbody></table></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay">
+  <div id="modal-box">
+    <button class="mc" id="mcl">✕</button>
+    <div class="mt" id="mtitle">Modal</div>
+    <div id="mcontent"></div>
+    <div class="ma"><button class="lobtn" id="mcl2">Annuler</button><button class="btn-p" id="msave" style="max-width:160px">Enregistrer</button></div>
+  </div>
+</div>
+
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import{getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged,createUserWithEmailAndPassword}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import{getFirestore,collection,doc,onSnapshot,query,orderBy,setDoc,addDoc,deleteDoc,serverTimestamp,getDoc,where}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+// ★ CONFIG FIREBASE — Remplace ces valeurs
+const cfg={apiKey:"VOTRE_API_KEY",authDomain:"VOTRE_AUTH_DOMAIN",projectId:"VOTRE_PROJECT_ID",storageBucket:"VOTRE_STORAGE_BUCKET",messagingSenderId:"VOTRE_MESSAGING_SENDER_ID",appId:"VOTRE_APP_ID"};
+const mainApp=initializeApp(cfg,'main'),secApp=initializeApp(cfg,'sec');
+const auth=getAuth(mainApp),secAuth=getAuth(secApp),db=getFirestore(mainApp);
+
+// ════ STATE ════
+let aUser=null,uProf=null,uRang=null;
+let TX=[],FAC=[],STK=[],SVC=[],PROD=[],RANGS=[],USERS=[],unsubs=[];
+let selectedWeekOffset=0; // 0=current, -1=last week, etc.
+
+// ════ WEEK SYSTEM ════
+function getWeekBounds(offset=0){
+  const now=new Date();
+  const day=now.getDay();
+  const toMon=day===0?-6:1-day;
+  const mon=new Date(now);
+  mon.setDate(now.getDate()+toMon+offset*7);
+  mon.setHours(0,0,0,0);
+  const sun=new Date(mon);
+  sun.setDate(mon.getDate()+6);
+  sun.setHours(23,59,59,999);
+  return{start:mon,end:sun};
+}
+
+function getISOWeek(d){
+  const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  const day=dt.getUTCDay()||7;
+  dt.setUTCDate(dt.getUTCDate()+4-day);
+  const y1=new Date(Date.UTC(dt.getUTCFullYear(),0,1));
+  return Math.ceil((((dt-y1)/86400000)+1)/7);
+}
+
+function weekLabel(offset=0){
+  const{start}=getWeekBounds(offset);
+  const w=getISOWeek(start);
+  const{end}=getWeekBounds(offset);
+  const fmt=d=>d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
+  return`S${w} — ${fmt(start)} au ${fmt(end)}`;
+}
+
+function buildWeekSelector(){
+  const sel=document.getElementById('week-sel');
+  sel.innerHTML='';
+  for(let i=0;i>=-11;i--){
+    const opt=document.createElement('option');
+    opt.value=i;
+    opt.textContent=weekLabel(i);
+    if(i===0)opt.textContent+=' (en cours)';
+    sel.appendChild(opt);
+  }
+  sel.value=0;
+}
+
+function inSelectedWeek(ts){
+  if(!ts)return false;
+  try{
+    const d=ts.toDate?ts.toDate():new Date(ts);
+    const{start,end}=getWeekBounds(selectedWeekOffset);
+    return d>=start&&d<=end;
+  }catch{return false;}
+}
+
+document.getElementById('week-sel').addEventListener('change',e=>{
+  selectedWeekOffset=parseInt(e.target.value);
+  document.getElementById('week-current-badge').style.display=selectedWeekOffset===0?'inline':'none';
+  refreshAll();
+});
+
+function refreshAll(){
+  const isAdmin=uProf?.role==='admin';
+  updateWeekLabels();
+  renderBilan();renderTX();renderStock();
+  renderSalaries();renderFactures();renderProdRecap();
+  if(!isAdmin){renderVendorTableau();renderMyServices();renderMyProd();}
+}
+
+function updateWeekLabels(){
+  const lbl=weekLabel(selectedWeekOffset);
+  const els=['b-week-lbl','tx-week-lbl','sal-week-lbl','fac-week-lbl','pr-week-lbl','vt-week-lbl','mp-week-lbl','svc-week-lbl'];
+  els.forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=lbl;});
+}
+
+// ════ AUTH ════
+onAuthStateChanged(auth,async u=>{
+  if(u){
+    aUser=u;await loadProf(u.uid);
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('tb-email').textContent=u.email;
+    buildWeekSelector();setup();startListeners();
+  }else{
+    aUser=null;uProf=null;uRang=null;
+    unsubs.forEach(f=>f());unsubs=[];
+    document.getElementById('login-screen').style.display='flex';
+    document.getElementById('app').style.display='none';
+  }
+});
+
+async function loadProf(uid){
+  const s=await getDoc(doc(db,'users',uid));
+  uProf=s.exists()?s.data():{role:'admin',nomRP:'',email:aUser.email};
+  if(uProf.rangId&&uProf.role!=='admin'){
+    const rs=await getDoc(doc(db,'rangs',uProf.rangId));
+    if(rs.exists())uRang={id:rs.id,...rs.data()};
+  }
+}
+
+document.getElementById('lb').onclick=async()=>{
+  const e=document.getElementById('le').value.trim(),p=document.getElementById('lp').value;
+  document.getElementById('lerr').textContent='';
+  try{await signInWithEmailAndPassword(auth,e,p);}catch{document.getElementById('lerr').textContent='Email ou mot de passe incorrect.';}
+};
+document.getElementById('login-screen').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('lb').click();});
+document.getElementById('lo-btn').onclick=()=>signOut(auth);
+
+// ════ SETUP ════
+function setup(){
+  const isAdmin=uProf?.role==='admin';
+  document.getElementById('nav-admin').style.display=isAdmin?'block':'none';
+  document.getElementById('nav-vendor').style.display=isAdmin?'none':'block';
+  if(isAdmin){
+    document.getElementById('tb-rang').innerHTML='<span class="bdg bgd">👑 Admin</span>';
+    swTab('bilan');
+  }else{
+    const p=uRang?.permissions||{},c=uRang?.couleur||'#7c3aed',n=uRang?.nom||'Employé';
+    document.getElementById('tb-rang').innerHTML=`<span class="u-rang-tb" style="background:${c}22;color:${c};border:1px solid ${c}44">${n}</span>`;
+    const sh=(id,v)=>{const el=document.getElementById(id);if(el)el.style.display=v?'flex':'none';};
+    sh('vn-prod',p.production);sh('vn-svc',p.services);sh('vn-sal',p.salaries);sh('vn-fac',p.factures);
+    document.getElementById('vt-name').textContent=`Mon Tableau — ${uProf.nomRP||''}`;
+    buildProdDropdown();
+    swTab('mon-tableau');
+  }
+  updateWeekLabels();
+}
+
+function swTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  const el=document.getElementById('tab-'+name);if(el)el.classList.add('active');
+  document.querySelectorAll('.nb').forEach(b=>{if(b.dataset.tab===name)b.classList.add('active');});
+}
+document.querySelectorAll('.nb').forEach(b=>b.addEventListener('click',()=>swTab(b.dataset.tab)));
+
+// ════ LISTENERS ════
+function startListeners(){
+  const isAdmin=uProf?.role==='admin';
+  unsubs.push(onSnapshot(query(collection(db,'transactions'),orderBy('timestamp','desc')),s=>{TX=s.docs.map(d=>({id:d.id,...d.data()}));renderBilan();renderTX();if(!isAdmin)renderVendorTableau();}));
+  unsubs.push(onSnapshot(query(collection(db,'factures'),orderBy('timestamp','desc')),s=>{FAC=s.docs.map(d=>({id:d.id,...d.data()}));renderFactures();renderSalaries();renderBilan();if(!isAdmin)renderVendorTableau();}));
+  unsubs.push(onSnapshot(query(collection(db,'stock_mouvements'),orderBy('timestamp','desc')),s=>{STK=s.docs.map(d=>({id:d.id,...d.data()}));renderStock();}));
+  unsubs.push(onSnapshot(query(collection(db,'services'),orderBy('debut','desc')),s=>{SVC=s.docs.map(d=>({id:d.id,...d.data()}));renderSalaries();if(!isAdmin){renderMyServices();renderVendorTableau();}}));
+  unsubs.push(onSnapshot(query(collection(db,'productions'),orderBy('timestamp','desc')),s=>{PROD=s.docs.map(d=>({id:d.id,...d.data()}));renderProdRecap();if(!isAdmin)renderMyProd();}));
+  if(isAdmin){
+    unsubs.push(onSnapshot(query(collection(db,'rangs'),orderBy('nom')),s=>{RANGS=s.docs.map(d=>({id:d.id,...d.data()}));renderRangs();}));
+    unsubs.push(onSnapshot(collection(db,'users'),s=>{USERS=s.docs.map(d=>({id:d.id,...d.data()}));renderUsers();}));
+  }
+}
+
+// ════ HELPERS ════
+const $=id=>document.getElementById(id);
+const fmt=n=>n==null?'—':Number(n).toLocaleString('fr-FR')+'$';
+const fmtN=n=>n==null?'—':Number(n).toLocaleString('fr-FR');
+function fmtD(ts){if(!ts)return'—';try{const d=ts.toDate?ts.toDate():new Date(ts);return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}catch{return'—';}}
+function fmtDur(m){if(!m&&m!==0)return'—';return Math.floor(m/60)+'h'+(m%60).toString().padStart(2,'0');}
+const cLbl=c=>({vente_client:'Vente client',essence:'Essence',depense_facture:'Dépense facture',salaire:'Salaire',approvisionnement:'Appro.',autre:'Autre'}[c]||c||'Autre');
+const cBdg=(c,t)=>t==='entree'?(c==='vente_client'?'bg':c==='essence'?'bgd':'bb'):'br';
+const weekTX=()=>TX.filter(t=>inSelectedWeek(t.timestamp));
+const weekFAC=()=>FAC.filter(f=>inSelectedWeek(f.timestamp));
+const weekSVC=()=>SVC.filter(s=>inSelectedWeek(s.debut));
+const weekPROD=()=>PROD.filter(p=>inSelectedWeek(p.timestamp));
+
+// ════ BILAN ════
+function renderBilan(){
+  const txW=weekTX();
+  const ent=txW.filter(t=>t.type==='entree'),sor=txW.filter(t=>t.type==='sortie');
+  const tE=ent.reduce((s,t)=>s+(t.montant||0),0),tS=sor.reduce((s,t)=>s+(t.montant||0),0);
+  const last=TX.find(t=>t.soldeApres),sol=last?last.soldeApres:(tE-tS);
+  $('bsv').textContent=fmt(sol);$('bme').textContent=fmt(tE);$('bms').textContent=fmt(tS);$('bmn').textContent=txW.length;
+  const vc=ent.filter(t=>t.categorie==='vente_client'),es=ent.filter(t=>t.categorie==='essence'),dp=sor;
+  $('bs1').textContent=fmt(vc.reduce((s,t)=>s+(t.montant||0),0));$('bs1n').textContent=`${vc.length} tx`;
+  $('bs2').textContent=fmt(dp.reduce((s,t)=>s+(t.montant||0),0));$('bs2n').textContent=`${dp.length} tx`;
+  $('bs3').textContent=fmt(es.reduce((s,t)=>s+(t.montant||0),0));$('bs3n').textContent=`${es.length} redistrib.`;
+  const facW=weekFAC();$('bs4').textContent=facW.length;$('bs4n').textContent=`${facW.filter(f=>f.status==='payee').length} payées`;
+  const cats={};for(const t of ent){const c=t.categorie||'autre';cats[c]=(cats[c]||0)+(t.montant||0);}
+  const mv=Math.max(...Object.values(cats),1);
+  const cl={vente_client:'#10b981',essence:'#f59e0b',autre:'#7c3aed',salaire:'#ef4444',approvisionnement:'#6366f1'};
+  $('brep').innerHTML=Object.entries(cats).length?Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`<div class="rr"><div class="rl">${cLbl(c)}</div><div class="rbw"><div class="rb" style="width:${(v/mv*100).toFixed(1)}%;background:${cl[c]||'#7c3aed'}"></div></div><div class="rv" style="color:${cl[c]||'#7c3aed'}">${fmt(v)}</div></div>`).join(''):'<div class="empty"><div class="ei">📊</div>Aucune donnée pour cette semaine</div>';
+  $('brecent').innerHTML=txW.slice(0,10).map(t=>`<tr><td class="tm">${fmtD(t.timestamp)}</td><td><span class="bdg ${t.type==='entree'?'bg':'br'}">${t.type==='entree'?'↑':'↓'} ${t.type==='entree'?'Entrée':'Sortie'}</span></td><td class="tmono" style="color:${t.type==='entree'?'var(--green)':'var(--red)'}">${fmt(t.montant)}</td><td><span class="bdg ${cBdg(t.categorie,t.type)}">${cLbl(t.categorie)}</span></td><td class="tm">${t.personne||'—'}</td></tr>`).join('')||'<tr><td colspan="5"><div class="empty"><div class="ei">💸</div>Aucune transaction cette semaine</div></td></tr>';
+}
+
+// ════ TRANSACTIONS ════
+function renderTX(){
+  const tp=$('ftt').value,ct=$('ftc').value,sr=$('fts').value.toLowerCase();
+  let d=weekTX();
+  if(tp)d=d.filter(t=>t.type===tp);if(ct)d=d.filter(t=>t.categorie===ct);
+  if(sr)d=d.filter(t=>(t.personne||'').toLowerCase().includes(sr)||(t.raison||'').toLowerCase().includes(sr));
+  $('txc').textContent=`${d.length} résultat${d.length>1?'s':''}`;
+  $('txb').innerHTML=d.map(t=>`<tr><td class="tm">${fmtD(t.timestamp)}</td><td><span class="bdg ${t.type==='entree'?'bg':'br'}">${t.type==='entree'?'↑ Entrée':'↓ Sortie'}</span></td><td class="tmono" style="color:${t.type==='entree'?'var(--green)':'var(--red)'}">${fmt(t.montant)}</td><td><span class="bdg ${cBdg(t.categorie,t.type)}">${cLbl(t.categorie)}</span></td><td class="tm">${t.personne||'—'}</td><td class="tm" style="max-width:180px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${t.raison||'—'}</td><td class="tmono" style="color:var(--pl)">${fmt(t.soldeApres)}</td></tr>`).join('')||'<tr><td colspan="7"><div class="empty"><div class="ei">🔍</div>Aucune transaction</div></td></tr>';
+}
+['ftt','ftc','fts'].forEach(id=>$(id)?.addEventListener('input',renderTX));
+
+// ════ STOCK ════
+function renderStock(){
+  const sr=$('fss').value.toLowerCase(),tp=$('fst').value;
+  const m={};for(const x of STK){const i=x.item||'?';if(!m[i])m[i]={t:0,a:0,r:0};if(x.type==='add'){m[i].t+=x.count||0;m[i].a+=x.count||0;}else{m[i].t-=x.count||0;m[i].r+=x.count||0;}}
+  $('stk-cards').innerHTML=Object.entries(m).sort((a,b)=>b[1].t-a[1].t).map(([i,d])=>`<div class="sk"><div class="skn">${i}</div><div class="skq" style="color:${d.t>0?'var(--pl)':d.t<0?'var(--red)':'var(--muted)'}">${d.t}</div><div class="skd"><span style="color:var(--green)">+${d.a}</span><span style="color:var(--red)">-${d.r}</span></div></div>`).join('')||'<div class="empty"><div class="ei">📦</div>Aucun mouvement</div>';
+  let d=[...STK];
+  if(sr)d=d.filter(x=>(x.item||'').toLowerCase().includes(sr)||(x.properName||'').toLowerCase().includes(sr));
+  if(tp)d=d.filter(x=>x.type===tp);
+  $('stkb').innerHTML=d.slice(0,30).map(x=>`<tr><td class="tm">${x.date||fmtD(x.timestamp)}</td><td style="font-weight:600">${x.item||'—'}</td><td><span class="bdg ${x.type==='add'?'bg':'br'}">${x.type==='add'?'+':'-'}</span></td><td class="tmono" style="color:${x.type==='add'?'var(--green)':'var(--red)'}">${x.type==='add'?'+':'-'}${x.count||0}</td><td class="tm">${x.properName||x.name||'—'}</td></tr>`).join('')||'<tr><td colspan="5"><div class="empty"><div class="ei">📦</div>Aucun mouvement</div></td></tr>';
+}
+['fss','fst'].forEach(id=>$(id)?.addEventListener('input',renderStock));
+
+// ════ SALARIÉS ════
+function renderSalaries(){
+  const facW=weekFAC(),svcW=weekSVC();
+  // Build map of all known employees from factures
+  const empMap={};
+  for(const f of facW){
+    const n=f.emetteur||'Inconnu';
+    if(!empMap[n])empMap[n]={ca:0,nbFac:0,minSvc:0};
+    if(f.status==='payee')empMap[n].ca+=f.montant||0;
+    empMap[n].nbFac++;
+  }
+  // Add service time
+  for(const s of svcW){
+    const n=s.employeNom||'';
+    if(!empMap[n])empMap[n]={ca:0,nbFac:0,minSvc:0};
+    empMap[n].minSvc+=s.duree||0;
+  }
+  const rows=Object.entries(empMap).sort((a,b)=>b[1].ca-a[1].ca);
+  // Get rang for each employee
+  const getRang=nom=>{const u=USERS.find(u=>u.nomRP===nom);const r=RANGS.find(r=>r.id===u?.rangId);return r?`<span class="bdg" style="background:${r.couleur||'#7c3aed'}22;color:${r.couleur||'#7c3aed'}">${r.nom}</span>`:'<span class="bdg bgr">—</span>';};
+  $('sal-body').innerHTML=rows.length?rows.map(([n,d])=>`
+    <tr>
+      <td style="font-weight:700">${n}</td>
+      <td>${getRang(n)}</td>
+      <td class="tmono" style="color:var(--green)">${fmt(d.ca)}</td>
+      <td class="tmono" style="color:var(--gold)">${fmt(Math.round(d.ca*.3))}</td>
+      <td class="tmono" style="color:var(--teal)">${fmtDur(d.minSvc)}</td>
+      <td class="tmono" style="color:var(--pl)">${d.nbFac}</td>
+    </tr>`).join(''):'<tr><td colspan="6"><div class="empty"><div class="ei">👥</div>Aucun employé actif cette semaine</div></td></tr>';
+}
+
+// ════ FACTURES ════
+function renderFactures(){
+  const sr=$('ffac-s')?.value.toLowerCase()||'',st=$('ffac-st')?.value||'';
+  let d=weekFAC();
+  if(sr)d=d.filter(f=>(f.emetteur||'').toLowerCase().includes(sr)||(f.raison||'').toLowerCase().includes(sr));
+  if(st)d=d.filter(f=>f.status===st);
+  const total=d.filter(f=>f.status==='payee').reduce((s,f)=>s+(f.montant||0),0);
+  $('fac-body').innerHTML=d.map(f=>`<tr><td class="tm">${f.creeLe||fmtD(f.timestamp)}</td><td style="font-weight:600">${f.emetteur||'—'}</td><td class="tm">${f.destinataire||'—'}</td><td class="tmono" style="color:var(--green)">${fmt(f.montant)}</td><td class="tm" style="max-width:160px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${f.raison||'—'}</td><td><span class="bdg ${f.status==='payee'?'bg':'bgd'}">${f.status==='payee'?'✓ Payée':'⏳ En attente'}</span></td><td class="tm">${f.paiement||'—'}</td></tr>`).join('')||'<tr><td colspan="7"><div class="empty"><div class="ei">🧾</div>Aucune facture cette semaine</div></td></tr>';
+  const el=$('fac-total');if(el)el.textContent=`Total encaissé : ${fmt(total)} — ${d.length} facture${d.length>1?'s':''}`;
+}
+['ffac-s','ffac-st'].forEach(id=>$(id)?.addEventListener('input',renderFactures));
+
+// ════ PROD RECAP ════
+function renderProdRecap(){
+  const d=weekPROD();
+  const im={};for(const x of d)im[x.item||'?']=(im[x.item||'?']||0)+(x.quantite||0);
+  $('prstats').innerHTML=Object.entries(im).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([i,q])=>`<div class="sc p"><div class="sl">${i}</div><div class="sv">${fmtN(q)}</div><div class="ss">unités</div></div>`).join('');
+  $('prb').innerHTML=d.map(x=>`<tr><td class="tm">${fmtD(x.timestamp)}</td><td style="font-weight:600">${x.nomRP||'—'}</td><td>${x.item||'—'}</td><td class="tmono" style="color:var(--pl)">${x.quantite||0}</td></tr>`).join('')||'<tr><td colspan="4"><div class="empty"><div class="ei">🏭</div>Aucune déclaration</div></td></tr>';
+}
+
+// ════ RANGS ════
+const PL={mon_tableau:'📊 Mon Tableau',production:'🏭 Production',services:'⏱️ Mes Services',salaries:'👥 Salariés',factures:'🧾 Factures'};
+const COLS=['#7c3aed','#10b981','#ef4444','#f59e0b','#6366f1','#14b8a6','#ec4899','#f97316'];
+
+function renderRangs(){
+  if(!RANGS.length){$('rangs-grid').innerHTML='<div class="empty"><div class="ei">⭐</div>Aucun rang créé</div>';return;}
+  $('rangs-grid').innerHTML=RANGS.map(r=>`
+    <div class="rc">
+      <div class="rch" style="background:${r.couleur||'#7c3aed'}18">
+        <div class="rcn" style="color:${r.couleur||'#7c3aed'}">${r.nom||'Rang'}</div>
+        <span class="bdg" style="background:${r.couleur||'#7c3aed'}22;color:${r.couleur||'#7c3aed'}">${(r.objetsProduction||[]).length} obj.</span>
+      </div>
+      <div class="rcb">
+        ${Object.entries(PL).map(([k,l])=>`<div class="rp"><span>${r.permissions?.[k]?'✅':'❌'}</span><span>${l}</span></div>`).join('')}
+        ${(r.objetsProduction||[]).length?`<div style="margin-top:.5rem;font-size:.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:.3rem">Objets déclarables</div><div class="ritems">${r.objetsProduction.map(o=>`<span class="rtag">${o}</span>`).join('')}</div>`:''}
+        <div class="ract">
+          <button class="btn-s" style="font-size:.74rem;padding:.38rem .75rem" onclick="window.editRang('${r.id}')">✏️ Modifier</button>
+          <button class="btn-d" style="font-size:.74rem;padding:.38rem .75rem" onclick="window.delRang('${r.id}','${r.nom.replace(/'/g,'\\'')}')">🗑️</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+$('btn-cr')?.addEventListener('click',()=>openRangModal(null));
+window.editRang=id=>{const r=RANGS.find(x=>x.id===id);if(r)openRangModal(r);};
+window.delRang=(id,n)=>showModal(`Supprimer "${n}" ?`,`<p style="color:var(--muted);font-size:.9rem">Cette action est irréversible.</p>`,async()=>{await deleteDoc(doc(db,'rangs',id));hideModal();});
+
+function openRangModal(r){
+  let sc=r?.couleur||COLS[0];
+  const html=`
+    <div class="mf"><label class="ml">Nom du rang</label><input id="rn" type="text" class="inp" value="${r?.nom||''}" placeholder="Ex: Vendeur Confirmé"/></div>
+    <div class="mf"><label class="ml">Couleur</label><div class="cpr" id="cpr">${COLS.map(c=>`<div class="cd${c===sc?' sel':''}" style="background:${c}" data-c="${c}" onclick="window.pc('${c}')"></div>`).join('')}</div></div>
+    <div class="mf"><label class="ml">Onglets visibles</label>
+      <div class="pgrid">${Object.entries(PL).map(([k,l])=>`<label class="ptog${r?.permissions?.[k]?' on':''}" id="pt_${k}" onclick="window.tp('${k}')"><input type="checkbox"${r?.permissions?.[k]?' checked':''}><div class="pd"></div><span class="ptl">${l}</span></label>`).join('')}</div>
+    </div>
+    <div class="mf"><label class="ml">Objets déclarables en production</label>
+      <div class="ilist" id="ilist">${(r?.objetsProduction||[]).map(i=>`<span class="ichip">${i}<span class="icr" onclick="window.ri('${i.replace(/'/g,'\\'')}')">✕</span></span>`).join('')}</div>
+      <div class="air"><input id="rii" type="text" class="inp" placeholder="Nom de l'objet…" style="flex:1"/><button class="btn-s" style="font-size:.78rem;padding:.38rem .75rem" onclick="window.ai()">+ Ajouter</button></div>
+    </div>`;
+  showModal(r?`Modifier "${r.nom}"`:'Créer un rang',html,async()=>{
+    const nom=$('rn').value.trim();if(!nom){alert('Nom obligatoire');return;}
+    const ps={};Object.keys(PL).forEach(k=>{ps[k]=$(`pt_${k}`)?.classList.contains('on')||false;});
+    const its=[...$('ilist').querySelectorAll('.ichip')].map(c=>c.textContent.replace('✕','').trim());
+    const data={nom,couleur:sc,permissions:ps,objetsProduction:its};
+    if(r)await setDoc(doc(db,'rangs',r.id),data,{merge:true});
+    else{data.createdAt=serverTimestamp();await addDoc(collection(db,'rangs'),data);}
+    hideModal();
+  });
+  window.pc=c=>{sc=c;document.querySelectorAll('.cd').forEach(d=>d.classList.toggle('sel',d.dataset.c===c));};
+  window.tp=k=>{$(`pt_${k}`)?.classList.toggle('on');};
+  window.ai=()=>{const v=$('rii').value.trim();if(!v)return;$('ilist').innerHTML+=`<span class="ichip">${v}<span class="icr" onclick="window.ri('${v.replace(/'/g,'\\'')}')">✕</span></span>`;$('rii').value='';};
+  window.ri=v=>{$('ilist').querySelectorAll('.ichip').forEach(c=>{if(c.textContent.replace('✕','').trim()===v)c.remove();});};
+  $('rii').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();window.ai();}});
+}
+
+// ════ USERS ════
+function renderUsers(){
+  if(!USERS.length){$('users-list').innerHTML='<div class="empty"><div class="ei">👤</div>Aucun utilisateur</div>';return;}
+  $('users-list').innerHTML=USERS.map(u=>{
+    const rg=RANGS.find(r=>r.id===u.rangId);
+    return`<div class="urow"><div class="urn">${u.nomRP||'—'}</div><div class="ure">${u.email||'—'}</div><div style="flex:1">${u.role==='admin'?'<span class="bdg bgd">👑 Admin</span>':rg?`<span class="bdg" style="background:${rg.couleur}22;color:${rg.couleur}">${rg.nom}</span>`:'<span class="bdg bgr">Sans rang</span>'}</div><div class="ura">${u.role!=='admin'?`<button class="btn-s" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.editUser('${u.id}')">✏️</button><button class="btn-d" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.delUser('${u.id}','${(u.nomRP||'').replace(/'/g,'\\'')}')">🗑️</button>`:''}</div></div>`;
+  }).join('');
+}
+
+$('btn-cu')?.addEventListener('click',()=>openUserModal(null));
+window.editUser=id=>{const u=USERS.find(x=>x.id===id);if(u)openUserModal(u);};
+window.delUser=(id,n)=>showModal(`Supprimer "${n}" ?`,`<p style="color:var(--muted);font-size:.9rem">Supprimez aussi le compte depuis Firebase Auth.</p>`,async()=>{await deleteDoc(doc(db,'users',id));hideModal();});
+
+function openUserModal(u){
+  const opts=RANGS.map(r=>`<option value="${r.id}"${u?.rangId===r.id?' selected':''}>${r.nom}</option>`).join('');
+  const html=`
+    <div class="mf"><label class="ml">Nom RP (doit correspondre au nom Discord)</label><input id="un" type="text" class="inp" value="${u?.nomRP||''}" placeholder="Ex: Kayla Moreno"/></div>
+    ${!u?`<div class="mf"><label class="ml">Email</label><input id="ue" type="email" class="inp" placeholder="email@exemple.com"/></div><div class="mf"><label class="ml">Mot de passe</label><input id="up" type="password" class="inp" placeholder="Min. 6 caractères"/></div>`:''}
+    <div class="mf"><label class="ml">Rang</label><select id="ur" class="inp fs" style="width:100%"><option value="">— Choisir un rang —</option>${opts}</select></div>`;
+  showModal(u?`Modifier ${u.nomRP}`:'Créer un compte',html,async()=>{
+    const nomRP=$('un').value.trim(),rangId=$('ur').value;
+    if(!nomRP){alert('Nom RP obligatoire');return;}
+    if(u){await setDoc(doc(db,'users',u.id),{nomRP,rangId},{merge:true});}
+    else{
+      const email=$('ue').value.trim(),pass=$('up').value;
+      if(!email||!pass){alert('Email et mot de passe obligatoires');return;}
+      try{const cr=await createUserWithEmailAndPassword(secAuth,email,pass);await signOut(secAuth);await setDoc(doc(db,'users',cr.user.uid),{email,nomRP,rangId,role:'user',createdAt:serverTimestamp()});}
+      catch(e){alert('Erreur : '+e.message);return;}
+    }
+    hideModal();
+  });
+}
+
+// ════ VENDOR TABLEAU ════
+function renderVendorTableau(){
+  if(!uProf||uProf.role==='admin')return;
+  const nom=uProf.nomRP||'';
+  const mf=weekFAC().filter(f=>f.emetteur===nom&&f.status==='payee');
+  const ca=mf.reduce((s,f)=>s+(f.montant||0),0),sal=Math.round(ca*.3);
+  const ms=weekSVC().filter(s=>s.employeNom===nom&&s.duree);
+  const tm=ms.reduce((s,x)=>s+(x.duree||0),0);
+  const allFac=weekFAC().filter(f=>f.emetteur===nom);
+  $('vtca').textContent=fmt(ca);$('vtcan').textContent=`${mf.length} facture${mf.length>1?'s':''} payée${mf.length>1?'s':''}`;
+  $('vtsal').textContent=fmt(sal);
+  $('vthrs').textContent=fmtDur(tm);$('vtmin').textContent=`${ms.length} session${ms.length>1?'s':''}`;
+  $('vtnbf').textContent=allFac.length;$('vtnbfp').textContent=`${mf.length} payée${mf.length>1?'s':''}`;
+  $('vtfac').innerHTML=allFac.slice(0,15).map(f=>`<tr><td class="tm">${f.creeLe||fmtD(f.timestamp)}</td><td class="tm">${f.destinataire||'—'}</td><td class="tmono" style="color:var(--green)">${fmt(f.montant)}</td><td class="tm" style="max-width:140px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${f.raison||'—'}</td><td><span class="bdg ${f.status==='payee'?'bg':'bgd'}">${f.status==='payee'?'✓ Payée':'⏳ En attente'}</span></td></tr>`).join('')||'<tr><td colspan="5"><div class="empty"><div class="ei">🧾</div>Aucune facture cette semaine</div></td></tr>';
+}
+
+// ════ MES SERVICES ════
+function renderMyServices(){
+  if(!uProf||uProf.role==='admin')return;
+  const nom=uProf.nomRP||'';
+  const ms=weekSVC().filter(s=>s.employeNom===nom&&s.duree);
+  const tm=ms.reduce((s,x)=>s+(x.duree||0),0);
+  $('svc-total').textContent=fmtDur(tm);$('svc-nb').textContent=ms.length;
+  $('svc-body').innerHTML=ms.map(s=>`<tr><td class="tm">${fmtD(s.debut)}</td><td class="tm">${fmtD(s.fin)||'En cours'}</td><td class="tmono" style="color:var(--teal)">${fmtDur(s.duree)}</td></tr>`).join('')||'<tr><td colspan="3"><div class="empty"><div class="ei">⏱️</div>Aucun service cette semaine</div></td></tr>';
+}
+
+// ════ PRODUCTION ════
+function buildProdDropdown(){
+  const items=uRang?.objetsProduction||[];
+  const sel=$('prod-item');
+  if(!sel)return;
+  sel.innerHTML='<option value="">— Choisir un objet —</option>';
+  items.forEach(i=>{const o=document.createElement('option');o.value=i;o.textContent=i;sel.appendChild(o);});
+  if(!items.length)sel.innerHTML='<option value="">Aucun objet défini pour votre rang</option>';
+}
+
+$('prod-submit')?.addEventListener('click',async()=>{
+  if(!uProf||uProf.role==='admin')return;
+  const item=$('prod-item')?.value,qty=parseInt($('prod-qty')?.value)||0;
+  const msg=$('prod-msg');
+  if(!item){msg.style.color='var(--red)';msg.textContent='Choisissez un objet.';setTimeout(()=>msg.textContent='',2500);return;}
+  if(qty<=0){msg.style.color='var(--red)';msg.textContent='Entrez une quantité valide.';setTimeout(()=>msg.textContent='',2500);return;}
+  await addDoc(collection(db,'productions'),{userId:aUser.uid,nomRP:uProf.nomRP||'',item,quantite:qty,timestamp:serverTimestamp()});
+  $('prod-item').value='';$('prod-qty').value='';
+  msg.style.color='var(--green)';msg.textContent=`✅ ${qty}x ${item} déclaré${qty>1?'s':''}  !`;
+  setTimeout(()=>msg.textContent='',3000);
+});
+
+function renderMyProd(){
+  if(!uProf||uProf.role==='admin')return;
+  const d=weekPROD().filter(p=>p.userId===aUser?.uid);
+  $('myprb').innerHTML=d.map(p=>`<tr><td class="tm">${fmtD(p.timestamp)}</td><td style="font-weight:600">${p.item||'—'}</td><td class="tmono" style="color:var(--pl)">${p.quantite||0}</td></tr>`).join('')||'<tr><td colspan="3"><div class="empty"><div class="ei">🏭</div>Aucune déclaration cette semaine</div></td></tr>';
+}
+
+// ════ MODAL ════
+function showModal(title,content,onSave){$('mtitle').textContent=title;$('mcontent').innerHTML=content;$('msave').onclick=onSave;$('modal-overlay').classList.add('open');}
+function hideModal(){$('modal-overlay').classList.remove('open');}
+$('mcl').addEventListener('click',hideModal);$('mcl2').addEventListener('click',hideModal);
+$('modal-overlay').addEventListener('click',e=>{if(e.target===$('modal-overlay'))hideModal();});
+</script>
+</body>
+</html>
