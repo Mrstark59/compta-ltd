@@ -312,6 +312,7 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
       <section id="tab-stock" class="tab">
         <div class="ptitle">Inventaire Stock</div><div class="psub">État global du stock — tous mouvements</div>
         <div class="fb" style="margin-bottom:.75rem">
+          <input type="text" id="stk-search" class="fi" placeholder="🔍 Rechercher un article…" style="max-width:280px"/>
           <select id="stk-sort" class="fs"><option value="custom">📌 Ordre personnalisé</option><option value="desc">↓ Quantité décroissante</option><option value="asc">↑ Quantité croissante</option><option value="alpha">🔤 Alphabétique</option></select>
         </div>
         <div id="stk-cards" class="sgrid"></div>
@@ -677,10 +678,18 @@ function renderStock(){
     if(sortMode==='alpha')return a[0].localeCompare(b[0]);
     return b[1].t-a[1].t; // desc default
   };
+  const stk_sr=(document.getElementById('stk-search')?.value||'').toLowerCase().trim();
   $('stk-cards').innerHTML=Object.entries(m).sort(sortFn).filter(([igNom])=>{
+    // Search filter
+    if(stk_sr){
+      const pm2=produits.find(p=>p.igNom&&p.igNom.toLowerCase()===igNom.toLowerCase());
+      const lbl2=pm2?pm2.nom:igNom;
+      if(!lbl2.toLowerCase().includes(stk_sr)&&!igNom.toLowerCase().includes(stk_sr))return false;
+    }
     const pm=produits.find(p=>p.igNom&&p.igNom.toLowerCase()===igNom.toLowerCase());
     // Si produit lié et showInStock explicitement false → masquer
-    if(pm&&pm.showInStock===false)return false;
+    const pm3=produits.find(p=>p.igNom&&p.igNom.toLowerCase()===igNom.toLowerCase());
+    if(pm3&&pm3.showInStock===false)return false;
     return true;
   }).map(([igNom,d])=>{
     const pm=produits.find(p=>p.igNom&&p.igNom.toLowerCase()===igNom.toLowerCase());
@@ -708,7 +717,7 @@ function renderStock(){
   if(tp)d=d.filter(x=>x.type===tp);
   $('stkb').innerHTML=d.slice(0,30).map(x=>`<tr><td class="tm">${x.date||fmtD(x.timestamp)}</td><td style="font-weight:600">${x.item||'—'}</td><td><span class="bdg ${x.type==='add'?'bg':'br'}">${x.type==='add'?'+':'-'}</span></td><td class="tmono" style="color:${x.type==='add'?'var(--green)':'var(--red)'}">${x.type==='add'?'+':'-'}${x.count||0}</td><td class="tm">${x.nomJeu||x.name||'—'}</td></tr>`).join('')||'<tr><td colspan="5"><div class="empty"><div class="ei">📦</div>Aucun mouvement</div></td></tr>';
 }
-['fss','fst','stk-sort'].forEach(id=>$(id)?.addEventListener('input',renderStock));
+['fss','fst','stk-sort','stk-search'].forEach(id=>$(id)?.addEventListener('input',renderStock));
 
 // ════ SALARIÉS ════
 function renderSalaries(){
