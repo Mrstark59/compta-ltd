@@ -807,6 +807,9 @@ window.openProduitModal=function(p){
   });
 }
 
+// ════ TOGGLE HELPER (global) ════
+window.tp=(k,checked)=>{const el=document.getElementById('pt_'+k);if(el)el.classList.toggle('on',checked);};
+
 // ════ RANGS ════
 const PL={mon_tableau:'📊 Mon Tableau',production:'🏭 Production',services:'⏱️ Mes Services',salaries:'👥 Salariés',factures:'🧾 Factures'};
 const COLS=['#7c3aed','#10b981','#ef4444','#f59e0b','#6366f1','#14b8a6','#ec4899','#f97316'];
@@ -857,7 +860,7 @@ function openRangModal(r){
     hideModal();
   });
   window.pc=c=>{sc=c;document.querySelectorAll('.cd').forEach(d=>d.classList.toggle('sel',d.dataset.c===c));};
-  window.tp=(k,checked)=>{const el=document.getElementById('pt_'+k);if(el)el.classList.toggle('on',checked);};
+  // window.tp is defined globally above
   window.tpp=(id,checked)=>{const el=document.getElementById('pp_'+id);if(el)el.classList.toggle('on',checked);};
   window.ai=()=>{};
   window.ri=btn=>{btn.closest('.ichip')?.remove();};
