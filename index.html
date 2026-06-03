@@ -675,6 +675,7 @@ function renderStock(){
         <button class="corr-btn" onclick="toggleCorr('${igNom}')">✏️</button>
       </div>
       <div class="skq" style="color:${d.t>0?'var(--pl)':d.t<0?'var(--red)':'var(--muted)'}">${d.t}</div>
+      ${d.t===0?'<div style="font-size:.65rem;color:var(--muted);margin-top:.15rem">Stock vide</div>':''}
       <div class="skd"><span style="color:var(--green)">+${d.a}</span><span style="color:var(--red)">-${d.r}</span></div>
       <div class="corr-form" id="cf-${iSafe}">
         <select id="ct-${iSafe}" class="corr-inp"><option value="add">+ Ajout</option><option value="remove">- Retrait</option><option value="set">= Définir valeur</option></select>
