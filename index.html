@@ -194,6 +194,9 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
 
 @media(max-width:900px){.sidebar{width:185px}.two-col{grid-template-columns:1fr}}
 @media(max-width:680px){.sidebar{display:none}.main{padding:1rem 1rem 2rem}.hv{font-size:2.5rem}}
+.corr-btn{background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.2);border-radius:6px;padding:.25rem .5rem;color:var(--pl);cursor:pointer;font-size:.75rem;font-weight:700;transition:all .15s}
+.corr-btn:hover{background:rgba(124,58,237,.25)}
+.corr-inp{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:7px;padding:.4rem .6rem;color:var(--text);font-family:'Mulish',sans-serif;font-size:.82rem;outline:none}
 .corr-form{display:none;gap:.5rem;flex-wrap:wrap;align-items:flex-end;padding:.6rem;background:rgba(124,58,237,.07);border:1px solid rgba(124,58,237,.15);border-radius:8px;margin-top:.5rem}
 .corr-form.open{display:flex}
 </style>
@@ -653,7 +656,7 @@ function renderStock(){
     const iSafe=igNom.replace(/[^a-zA-Z0-9]/g,'-');
     return `<div class="sk">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.3rem">
-        <div><div class="skn" style="margin-bottom:.1rem">${lbl}</div>${pm?'':'<div style="font-size:.65rem;color:var(--dim)">${igNom}</div>'}</div>
+        <div><div class="skn" style="margin-bottom:.1rem">${lbl}</div>${pm?'':`<div style="font-size:.65rem;color:var(--dim)">${igNom}</div>`}</div>
         <button class="corr-btn" onclick="toggleCorr('${igNom}')">✏️</button>
       </div>
       <div class="skq" style="color:${d.t>0?'var(--pl)':d.t<0?'var(--red)':'var(--muted)'}">${d.t}</div>
@@ -841,8 +844,8 @@ function renderUsers(){
 }
 
 $('btn-cu')?.addEventListener('click',()=>openUserModal(null));
-window.editUser=id=>{const u=USERS.find(x=>x.id===id);if(u)openUserModal(u);};
-window.delUser=(id,n)=>showModal(`Supprimer "${n}" ?`,`<p style="color:var(--muted);font-size:.9rem">Supprimez aussi le compte depuis Firebase Auth.</p>`,async()=>{await deleteDoc(doc(db,'users',id));hideModal();});
+window.editUser=btn=>{const id=btn.dataset?btn.dataset.id:btn;const u=USERS.find(x=>x.id===id);if(u)openUserModal(u);};
+window.delUser=btn=>{const id=btn.dataset?btn.dataset.id:btn,n=btn.dataset?btn.dataset.nom:arguments[1];showModal(`Supprimer "${n}" ?`,`<p style="color:var(--muted);font-size:.9rem">Supprimez aussi le compte depuis Firebase Auth.</p>`,async()=>{await deleteDoc(doc(db,'users',id));hideModal();});};
 
 function openUserModal(u){
   const opts=RANGS.map(r=>`<option value="${r.id}"${u?.rangId===r.id?' selected':''}>${r.nom}</option>`).join('');
@@ -897,7 +900,7 @@ function buildProdDropdown(){
   const sel=$('prod-item');
   if(!sel)return;
   sel.innerHTML='<option value="">— Choisir un objet —</option>';
-  items.forEach(i=>{const o=document.createElement('option');o.value=i;o.textContent=i;sel.appendChild(o);});
+  items.forEach(i=>{const o=document.createElement('option');o.value=i.nom||i;o.dataset.prix=i.prix||0;o.textContent=(i.nom||i)+(i.prix>0?' (+'+i.prix+'$)':'');sel.appendChild(o);});
   if(!items.length)sel.innerHTML='<option value="">Aucun objet défini pour votre rang</option>';
 }
 
@@ -918,6 +921,36 @@ function renderMyProd(){
   const d=weekPROD().filter(p=>p.userId===aUser?.uid);
   $('myprb').innerHTML=d.map(p=>`<tr><td class="tm">${fmtD(p.timestamp)}</td><td style="font-weight:600">${p.item||'—'}</td><td class="tmono" style="color:var(--pl)">${p.quantite||0}</td></tr>`).join('')||'<tr><td colspan="3"><div class="empty"><div class="ei">🏭</div>Aucune déclaration cette semaine</div></td></tr>';
 }
+
+
+// ════ STOCK CORRECTIONS ════
+window.toggleCorr=function(itemName){
+  const iSafe=itemName.replace(/[^a-zA-Z0-9]/g,'-');
+  const form=document.getElementById('cf-'+iSafe);
+  if(form)form.classList.toggle('open');
+};
+
+window.submitCorr2=function(itemName){
+  const iSafe=itemName.replace(/[^a-zA-Z0-9]/g,'-');
+  const typeEl=document.getElementById('ct-'+iSafe);
+  const qtyEl=document.getElementById('cq-'+iSafe);
+  const motifEl=document.getElementById('cm-'+iSafe);
+  if(!typeEl||!qtyEl)return;
+  const qty=parseInt(qtyEl.value)||0;
+  const type=typeEl.value;
+  if(type!=='set'&&qty<=0){alert('Quantité invalide');return;}
+  const motif=(motifEl&&motifEl.value)||'Correction manuelle';
+  addDoc(collection(db,'stock_mouvements'),{item:itemName,type:type==='set'?'correction':type,count:qty,source:'admin',motif,timestamp:serverTimestamp()}).catch(e=>console.error(e));
+  const form=document.getElementById('cf-'+iSafe);
+  if(form)form.classList.remove('open');
+  if(qtyEl)qtyEl.value='';
+  if(motifEl)motifEl.value='';
+};
+
+window.resetStock=function(itemName){
+  if(!confirm('Remettre "'+itemName+'" à 0 ?'))return;
+  addDoc(collection(db,'stock_mouvements'),{item:itemName,type:'reset',count:0,source:'admin',motif:'Remise à zéro',timestamp:serverTimestamp()}).catch(e=>console.error(e));
+};
 
 // ════ MODAL ════
 function showModal(title,content,onSave){$('mtitle').textContent=title;$('mcontent').innerHTML=content;$('msave').onclick=onSave;$('modal-overlay').classList.add('open');}
