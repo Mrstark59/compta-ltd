@@ -194,6 +194,8 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
 
 @media(max-width:900px){.sidebar{width:185px}.two-col{grid-template-columns:1fr}}
 @media(max-width:680px){.sidebar{display:none}.main{padding:1rem 1rem 2rem}.hv{font-size:2.5rem}}
+.corr-form{display:none;gap:.5rem;flex-wrap:wrap;align-items:flex-end;padding:.6rem;background:rgba(124,58,237,.07);border:1px solid rgba(124,58,237,.15);border-radius:8px;margin-top:.5rem}
+.corr-form.open{display:flex}
 </style>
 </head>
 <body>
@@ -746,7 +748,8 @@ function renderProduits(){
     </div>`).join('');
 }
 
-document.getElementById('btn-cp')?.addEventListener('click', () => openProduitModal(null));
+// btn-cp listener - attached after DOM ready
+(function(){const b=document.getElementById('btn-cp');if(b)b.addEventListener('click',()=>openProduitModal(null));})();
 window.editProduit = btn => { const p = produits.find(x => x.id === btn.dataset.id); if(p) openProduitModal(p); };
 window.delProduit = btn => {
   showModal(`Supprimer "${btn.dataset.nom}" ?`, '<p style="color:var(--muted);font-size:.9rem">Ce produit sera retiré de tous les rangs.</p>', async () => {
@@ -755,7 +758,7 @@ window.delProduit = btn => {
   });
 };
 
-function openProduitModal(p){
+window.openProduitModal=function(p){
   const html = `
     <div class="mf"><label class="ml">Nom d'affichage (FR)</label><input id="pnom" type="text" class="inp" value="${p?.nom||''}" placeholder="Ex: Porte-clés, Sandwich…"/></div>
     <div class="mf"><label class="ml">Nom technique IG <span style="color:var(--muted);font-weight:400">(nom exact dans les logs Discord)</span></label><input id="pignom" type="text" class="inp" value="${p?.igNom||''}" placeholder="Ex: key_chain, sandwich…"/><div style="font-size:.75rem;color:var(--muted);margin-top:.3rem">Permet d'afficher le bon nom FR dans le stock</div></div>
@@ -765,7 +768,7 @@ function openProduitModal(p){
     const igNom = document.getElementById('pignom').value.trim().toLowerCase();
     const prix = parseInt(document.getElementById('pprix').value) || 0;
     if(!nom){ alert('Nom obligatoire'); return; }
-    if(p) await setDoc(doc(db,'produits',p.id), {nom, igNom, prix}, {merge:true});
+    if(p){await setDoc(doc(db,'produits',p.id), {nom, igNom, prix}, {merge:true});
     else await addDoc(collection(db,'produits'), {nom, igNom, prix, createdAt: serverTimestamp()});
     hideModal();
   });
