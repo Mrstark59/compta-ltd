@@ -794,7 +794,7 @@ window.openProduitModal=function(p){
         <input type="checkbox"${p?.showInStock===false?'':' checked'} onchange="window.tp('p-stock-tog',this.checked)">
         <div class="pd"></div><span class="ptl">Afficher dans l'inventaire stock</span>
       </label>
-    </div>\`; 
+    </div>`;
   showModal(p ? `Modifier "${p.nom}"` : 'Créer un produit', html, async () => {
     const nom = document.getElementById('pnom').value.trim();
     const igNom = document.getElementById('pignom').value.trim().toLowerCase();
