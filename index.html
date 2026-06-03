@@ -768,7 +768,7 @@ window.openProduitModal=function(p){
     const igNom = document.getElementById('pignom').value.trim().toLowerCase();
     const prix = parseInt(document.getElementById('pprix').value) || 0;
     if(!nom){ alert('Nom obligatoire'); return; }
-    if(p){await setDoc(doc(db,'produits',p.id), {nom, igNom, prix}, {merge:true});
+    if(p) await setDoc(doc(db,'produits',p.id), {nom, igNom, prix}, {merge:true});
     else await addDoc(collection(db,'produits'), {nom, igNom, prix, createdAt: serverTimestamp()});
     hideModal();
   });
