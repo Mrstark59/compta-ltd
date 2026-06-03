@@ -791,7 +791,7 @@ window.openProduitModal=function(p){
     <div class="mf"><label class="ml">Prix unitaire (bonus par unité déclarée)</label><input id="pprix" type="number" min="0" class="inp" value="${p?.prix||0}" placeholder="0"/><div style="font-size:.75rem;color:var(--muted);margin-top:.3rem">Mettre 0 si pas de bonus</div></div>
     <div class="mf"><label class="ml">Visible dans le stock</label>
       <label class="ptog${p?.showInStock===false?'':' on'}" id="p-stock-tog" style="width:fit-content;gap:.75rem">
-        <input type="checkbox"${p?.showInStock===false?'':' checked'} onchange="window.tp('p-stock-tog',this.checked)">
+        <input type="checkbox"${p?.showInStock===false?'':' checked'} onchange="this.closest('.ptog').classList.toggle('on',this.checked)">
         <div class="pd"></div><span class="ptl">Afficher dans l'inventaire stock</span>
       </label>
     </div>`;
