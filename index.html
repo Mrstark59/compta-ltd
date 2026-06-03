@@ -311,6 +311,9 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
       <!-- STOCK (admin) -->
       <section id="tab-stock" class="tab">
         <div class="ptitle">Inventaire Stock</div><div class="psub">État global du stock — tous mouvements</div>
+        <div class="fb" style="margin-bottom:.75rem">
+          <select id="stk-sort" class="fs"><option value="custom">📌 Ordre personnalisé</option><option value="desc">↓ Quantité décroissante</option><option value="asc">↑ Quantité croissante</option><option value="alpha">🔤 Alphabétique</option></select>
+        </div>
         <div id="stk-cards" class="sgrid"></div>
         <div class="card"><div class="ctitle">Mouvements récents</div>
           <div class="fb" style="margin-top:.5rem"><input type="text" id="fss" class="fi" placeholder="🔍  Item ou employé…"/><select id="fst" class="fs"><option value="">Tous</option><option value="add">Ajouts</option><option value="remove">Retraits</option></select></div>
@@ -666,7 +669,15 @@ function renderStock(){
       m[i].t-=x.count||0;m[i].r+=x.count||0;
     }
   }
-  $('stk-cards').innerHTML=Object.entries(m).sort((a,b)=>b[1].t-a[1].t).filter(([igNom])=>{
+  const sortMode=document.getElementById('stk-sort')?.value||'custom';
+  const getPos=igN=>{const pm=produits.find(p=>p.igNom&&p.igNom.toLowerCase()===igN.toLowerCase());return pm?.position??99;};
+  const sortFn=(a,b)=>{
+    if(sortMode==='custom')return getPos(a[0])-getPos(b[0]);
+    if(sortMode==='asc')return a[1].t-b[1].t;
+    if(sortMode==='alpha')return a[0].localeCompare(b[0]);
+    return b[1].t-a[1].t; // desc default
+  };
+  $('stk-cards').innerHTML=Object.entries(m).sort(sortFn).filter(([igNom])=>{
     const pm=produits.find(p=>p.igNom&&p.igNom.toLowerCase()===igNom.toLowerCase());
     // Si produit lié et showInStock explicitement false → masquer
     if(pm&&pm.showInStock===false)return false;
@@ -697,7 +708,7 @@ function renderStock(){
   if(tp)d=d.filter(x=>x.type===tp);
   $('stkb').innerHTML=d.slice(0,30).map(x=>`<tr><td class="tm">${x.date||fmtD(x.timestamp)}</td><td style="font-weight:600">${x.item||'—'}</td><td><span class="bdg ${x.type==='add'?'bg':'br'}">${x.type==='add'?'+':'-'}</span></td><td class="tmono" style="color:${x.type==='add'?'var(--green)':'var(--red)'}">${x.type==='add'?'+':'-'}${x.count||0}</td><td class="tm">${x.nomJeu||x.name||'—'}</td></tr>`).join('')||'<tr><td colspan="5"><div class="empty"><div class="ei">📦</div>Aucun mouvement</div></td></tr>';
 }
-['fss','fst'].forEach(id=>$(id)?.addEventListener('input',renderStock));
+['fss','fst','stk-sort'].forEach(id=>$(id)?.addEventListener('input',renderStock));
 
 // ════ SALARIÉS ════
 function renderSalaries(){
@@ -794,15 +805,17 @@ window.openProduitModal=function(p){
         <input type="checkbox"${p?.showInStock===false?'':' checked'} onchange="this.closest('.ptog').classList.toggle('on',this.checked)">
         <div class="pd"></div><span class="ptl">Afficher dans l'inventaire stock</span>
       </label>
-    </div>`;
+    </div>
+    <div class="mf"><label class="ml">Position (ordre d'affichage)</label><input id="ppos" type="number" min="0" class="inp" value="${p?.position??99}" placeholder="1, 2, 3…" style="width:120px"/><div style="font-size:.75rem;color:var(--muted);margin-top:.3rem">Plus petit = affiché en premier</div></div>`;
   showModal(p ? `Modifier "${p.nom}"` : 'Créer un produit', html, async () => {
     const nom = document.getElementById('pnom').value.trim();
     const igNom = document.getElementById('pignom').value.trim().toLowerCase();
     const prix = parseInt(document.getElementById('pprix').value) || 0;
     if(!nom){ alert('Nom obligatoire'); return; }
     const showInStock=document.getElementById('p-stock-tog')?.classList.contains('on')!==false;
-    if(p) await setDoc(doc(db,'produits',p.id), {nom, igNom, prix, showInStock}, {merge:true});
-    else await addDoc(collection(db,'produits'), {nom, igNom, prix, showInStock, createdAt: serverTimestamp()});
+    const position=parseInt(document.getElementById('ppos')?.value)||99;
+    if(p) await setDoc(doc(db,'produits',p.id), {nom, igNom, prix, showInStock, position}, {merge:true});
+    else await addDoc(collection(db,'produits'), {nom, igNom, prix, showInStock, position, createdAt: serverTimestamp()});
     hideModal();
   });
 }
@@ -849,7 +862,8 @@ function openRangModal(r){
       <div id="prod-checkboxes" style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-top:.25rem">
         ${produits.length ? produits.map(p => `<label class="ptog${(r?.produitsIds||[]).includes(p.id)?' on':''}" id="pp_${p.id}" style="justify-content:space-between"><span>${p.nom}${p.prix>0?' (+'+p.prix+'$)':''}</span><input type="checkbox"${(r?.produitsIds||[]).includes(p.id)?' checked':''} onchange="window.tpp('${p.id}',this.checked)"></label>`).join('') : '<p style="color:var(--muted);font-size:.82rem">Aucun produit créé — va dans l\'onglet Produits d\'abord</p>'}
       </div>
-    </div>`;
+    </div>
+    <div class="mf"><label class="ml">Position (ordre d'affichage)</label><input id="ppos" type="number" min="0" class="inp" value="${p?.position??99}" placeholder="1, 2, 3…" style="width:120px"/><div style="font-size:.75rem;color:var(--muted);margin-top:.3rem">Plus petit = affiché en premier</div></div>`;
   showModal(r?`Modifier "${r.nom}"`:'Créer un rang',html,async()=>{
     const nom=$('rn').value.trim();if(!nom){alert('Nom obligatoire');return;}
     const ps={};Object.keys(PL).forEach(k=>{ps[k]=$(`pt_${k}`)?.classList.contains('on')||false;});
