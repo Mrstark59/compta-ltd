@@ -649,7 +649,22 @@ function renderTX(){
 // ════ STOCK ════
 function renderStock(){
   const sr=$('fss').value.toLowerCase(),tp=$('fst').value;
-  const m={};for(const x of STK){const i=x.item||'?';if(!m[i])m[i]={t:0,a:0,r:0};if(x.type==='add'){m[i].t+=x.count||0;m[i].a+=x.count||0;}else{m[i].t-=x.count||0;m[i].r+=x.count||0;}}
+  const m={};
+  // Traitement du plus ancien au plus récent pour gérer les resets correctement
+  const orderedSTK=[...STK].reverse();
+  for(const x of orderedSTK){
+    const i=x.item||'?';
+    if(!m[i])m[i]={t:0,a:0,r:0};
+    if(x.type==='reset'){
+      m[i].t=0; // Remise à zéro
+    }else if(x.type==='correction'){
+      m[i].t=x.count||0; // Valeur définie manuellement
+    }else if(x.type==='add'){
+      m[i].t+=x.count||0;m[i].a+=x.count||0;
+    }else{
+      m[i].t-=x.count||0;m[i].r+=x.count||0;
+    }
+  }
   $('stk-cards').innerHTML=Object.entries(m).sort((a,b)=>b[1].t-a[1].t).map(([igNom,d])=>{
     const pm=produits.find(p=>p.igNom&&p.igNom.toLowerCase()===igNom.toLowerCase());
     const lbl=pm?pm.nom:igNom;
