@@ -526,7 +526,7 @@ function weekLabel(offset=0){
 function buildWeekSelector(){
   const sel=document.getElementById('week-sel');
   sel.innerHTML='';
-  for(let i=0;i>=-11;i--){
+  for(let i=0;i>=-1;i--){
     const opt=document.createElement('option');
     opt.value=i;
     opt.textContent=weekLabel(i);
@@ -630,7 +630,7 @@ document.querySelectorAll('.nb').forEach(b=>b.addEventListener('click',()=>swTab
 // ════ LISTENERS ════
 function startListeners(){
   const isAdmin=uProf?.role==='admin';
-  const cutoffTs=Timestamp.fromDate(new Date(Date.now()-84*24*60*60*1000));
+  const cutoffTs=Timestamp.fromDate(new Date(Date.now()-14*24*60*60*1000));
   unsubs.push(onSnapshot(query(collection(db,'transactions'),where('timestamp','>=',cutoffTs),orderBy('timestamp','desc')),s=>{TX=s.docs.map(d=>({id:d.id,...d.data()}));renderBilan();renderTX();if(!isAdmin)renderVendorTableau();}));
   unsubs.push(onSnapshot(query(collection(db,'factures'),where('timestamp','>=',cutoffTs),orderBy('timestamp','desc')),s=>{FAC=s.docs.map(d=>({id:d.id,...d.data()}));renderFactures();renderSalaries();renderBilan();if(!isAdmin)renderVendorTableau();}));
   unsubs.push(onSnapshot(query(collection(db,'stock_mouvements'),where('timestamp','>=',cutoffTs),orderBy('timestamp','desc')),s=>{STK=s.docs.map(d=>({id:d.id,...d.data()}));renderStock();}));
