@@ -622,7 +622,7 @@ function startListeners(){
   unsubs.push(onSnapshot(query(collection(db,'produits'),orderBy('nom')),s=>{produits=s.docs.map(d=>({id:d.id,...d.data()}));if(isAdmin){renderProduits();renderRangs();renderStock();}else{buildProdDropdown();}}));
   if(isAdmin){
     unsubs.push(onSnapshot(query(collection(db,'rangs'),orderBy('nom')),s=>{RANGS=s.docs.map(d=>({id:d.id,...d.data()}));renderRangs();}));
-    unsubs.push(onSnapshot(collection(db,'users'),s=>{USERS=s.docs.map(d=>({id:d.id,...d.data()}));renderUsers();}));
+    unsubs.push(onSnapshot(collection(db,'users'),s=>{USERS=s.docs.map(d=>({id:d.id,...d.data()}));renderUsers();renderSalaries();}));
   }
 }
 
