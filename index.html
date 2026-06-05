@@ -266,6 +266,7 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
         <button class="nb" id="vn-svc"      data-tab="mes-svc"   style="display:none">⏱️ Mes Services</button>
         <button class="nb" id="vn-sal"      data-tab="salaries"  style="display:none">👥 Salariés</button>
         <button class="nb" id="vn-fac"      data-tab="factures"  style="display:none">🧾 Factures</button>
+        <button class="nb" data-tab="mon-mdp">🔑 Mot de passe</button>
       </div>
     </aside>
 
@@ -326,6 +327,10 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
       <section id="tab-salaries" class="tab">
         <div class="ptitle">Salariés</div>
         <div class="psub" id="sal-week-lbl"></div>
+        <div id="sync-banner" style="display:none;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:.85rem 1.25rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+          <div style="font-size:.85rem;color:var(--gold)">⚠️ <span id="sync-msg"></span></div>
+          <button class="btn-s" id="btn-sync" style="border-color:rgba(245,158,11,.4);color:var(--gold)">✨ Créer les comptes manquants</button>
+        </div>
         <div class="card"><div class="tw"><table>
           <thead><tr><th>Employé</th><th>Rang</th><th>CA semaine</th><th>Salaire (30%)</th><th>Heures service</th><th>Nb factures</th></tr></thead>
           <tbody id="sal-body"></tbody>
@@ -393,6 +398,19 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
         <div class="card"><div class="ctitle">Mes factures de la semaine</div><div class="tw"><table><thead><tr><th>Date</th><th>Destinataire</th><th>Montant</th><th>Raison</th><th>Statut</th></tr></thead><tbody id="vtfac"></tbody></table></div></div>
       </section>
 
+      <!-- CHANGER MOT DE PASSE (vendor) -->
+      <section id="tab-mon-mdp" class="tab">
+        <div class="ptitle">Mon Mot de Passe</div>
+        <div class="psub">Modifier votre mot de passe de connexion</div>
+        <div class="card" style="max-width:440px">
+          <div class="mf"><label class="ml">Mot de passe actuel</label><input id="mdp-old" type="password" class="inp" placeholder="Mot de passe actuel"/></div>
+          <div class="mf"><label class="ml">Nouveau mot de passe</label><input id="mdp-new" type="password" class="inp" placeholder="Min. 6 caractères"/></div>
+          <div class="mf"><label class="ml">Confirmer</label><input id="mdp-conf" type="password" class="inp" placeholder="Répéter le nouveau mot de passe"/></div>
+          <button class="btn-p" id="btn-mdp-save" style="max-width:200px">Enregistrer</button>
+          <div id="mdp-msg" style="margin-top:.75rem;font-size:.82rem;min-height:1rem"></div>
+        </div>
+      </section>
+
       <!-- MA PRODUCTION (vendor) -->
       <section id="tab-ma-prod" class="tab">
         <div class="ptitle">Déclarer ma Production</div>
@@ -446,7 +464,7 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
 
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import{getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged,createUserWithEmailAndPassword}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import{getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged,createUserWithEmailAndPassword,updatePassword,reauthenticateWithCredential,EmailAuthProvider}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import{getFirestore,collection,doc,onSnapshot,query,orderBy,setDoc,addDoc,deleteDoc,serverTimestamp,getDoc,where}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 // ★ CONFIG FIREBASE — Remplace ces valeurs
@@ -726,6 +744,7 @@ function renderSalaries(){
   const empMap={};
   for(const f of facW){
     const n=f.emetteur||'Inconnu';
+    if(!n||n==='Inconnu')continue;
     if(!empMap[n])empMap[n]={ca:0,nbFac:0,minSvc:0};
     if(f.status==='payee')empMap[n].ca+=f.montant||0;
     empMap[n].nbFac++;
@@ -739,6 +758,19 @@ function renderSalaries(){
   const rows=Object.entries(empMap).sort((a,b)=>b[1].ca-a[1].ca);
   // Get rang for each employee
   const getRang=nom=>{const u=USERS.find(u=>u.nomJeu===nom);const r=RANGS.find(r=>r.id===u?.rangId);return r?`<span class="bdg" style="background:${r.couleur||'#7c3aed'}22;color:${r.couleur||'#7c3aed'}">${r.nom}</span>`:'<span class="bdg bgr">—</span>';};
+  // Detect employees without accounts
+  const knownNames=USERS.map(u=>u.nomJeu?.toLowerCase()).filter(Boolean);
+  const missing=Object.keys(empMap).filter(n=>n!=='Inconnu'&&n&&!knownNames.includes(n.toLowerCase()));
+  const syncBanner=document.getElementById('sync-banner');
+  const syncMsg=document.getElementById('sync-msg');
+  if(syncBanner&&syncMsg){
+    if(missing.length>0){
+      syncBanner.style.display='flex';
+      syncMsg.textContent=missing.length+' employé'+(missing.length>1?'s':'')+' détecté'+(missing.length>1?'s':'')+' sans compte : '+missing.join(', ');
+    }else{
+      syncBanner.style.display='none';
+    }
+  }
   $('sal-body').innerHTML=rows.length?rows.map(([n,d])=>`
     <tr>
       <td style="font-weight:700">${n}</td>
@@ -895,7 +927,8 @@ function renderUsers(){
   if(!USERS.length){$('users-list').innerHTML='<div class="empty"><div class="ei">👤</div>Aucun utilisateur</div>';return;}
   $('users-list').innerHTML=USERS.map(u=>{
     const rg=RANGS.find(r=>r.id===u.rangId);
-    return`<div class="urow"><div class="urn">${u.nomJeu||'—'}</div><div class="ure">${u.email||'—'}</div><div style="flex:1">${u.role==='admin'?'<span class="bdg bgd">👑 Admin</span>':rg?`<span class="bdg" style="background:${rg.couleur}22;color:${rg.couleur}">${rg.nom}</span>`:'<span class="bdg bgr">Sans rang</span>'}</div><div class="ura">${u.role!=='admin'?`<button class="btn-s" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.editUser(this)" data-id="${u.id}">✏️</button><button class="btn-d" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.delUser(this)" data-id="${u.id}" data-nom="${u.nomJeu||''}"">🗑️</button>`:''}</div></div>`;
+    const mdpDisplay=u.mdp?`<span style="font-size:.72rem;color:var(--muted);font-family:monospace;cursor:pointer" onclick="this.textContent=this.textContent==='🔑 Voir'?'${u.mdp||'—'}':'🔑 Voir'" title="Cliquer pour révéler">🔑 Voir</span>`:'<span style="font-size:.72rem;color:var(--dim)">—</span>';
+    return`<div class="urow"><div class="urn">${u.nomJeu||'—'}</div><div class="ure">${u.email||'—'}</div><div style="flex:.8;display:flex;align-items:center;gap:.5rem">${mdpDisplay}</div><div style="flex:1">${u.role==='admin'?'<span class="bdg bgd">👑 Admin</span>':rg?`<span class="bdg" style="background:${rg.couleur}22;color:${rg.couleur}">${rg.nom}</span>`:'<span class="bdg bgr">Sans rang</span>'}</div><div class="ura">${u.role!=='admin'?`<button class="btn-s" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.resetMdp(this)" data-id="${u.id}" data-email="${u.email||''}" title="Réinitialiser le mot de passe">🔄</button><button class="btn-s" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.editUser(this)" data-id="${u.id}">✏️</button><button class="btn-d" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.delUser(this)" data-id="${u.id}" data-nom="${u.nomJeu||''}"">🗑️</button>`:''}</div></div>`;
   }).join('');
 }
 
@@ -916,7 +949,7 @@ function openUserModal(u){
     else{
       const email=$('ue').value.trim(),pass=$('up').value;
       if(!email||!pass){alert('Email et mot de passe obligatoires');return;}
-      try{const cr=await createUserWithEmailAndPassword(secAuth,email,pass);await signOut(secAuth);await setDoc(doc(db,'users',cr.user.uid),{email,nomJeu,rangId,role:'user',createdAt:serverTimestamp()});}
+      try{const cr=await createUserWithEmailAndPassword(secAuth,email,pass);await signOut(secAuth);await setDoc(doc(db,'users',cr.user.uid),{email,nomJeu,rangId,role:'user',mdp:pass,createdAt:serverTimestamp()});}
       catch(e){alert('Erreur : '+e.message);return;}
     }
     hideModal();
@@ -1007,6 +1040,79 @@ window.resetStock=function(itemName){
   if(!confirm('Remettre "'+itemName+'" à 0 ?'))return;
   addDoc(collection(db,'stock_mouvements'),{item:itemName,type:'reset',count:0,source:'admin',motif:'Remise à zéro',timestamp:serverTimestamp()}).catch(e=>console.error(e));
 };
+
+// ════ SYNC COMPTES ════
+document.getElementById('btn-sync')?.addEventListener('click', async()=>{
+  const knownNames=USERS.map(u=>u.nomJeu?.toLowerCase()).filter(Boolean);
+  const allNames=[...new Set(FAC.map(f=>f.emetteur).filter(n=>n&&n!=='Inconnu'))];
+  const missing=allNames.filter(n=>!knownNames.includes(n.toLowerCase()));
+  if(!missing.length){alert('Tous les employés ont déjà un compte !');return;}
+  const defPass='LTD2026!';
+  let created=0,errors=[];
+  for(const nom of missing){
+    const slug=nom.toLowerCase().normalize('NFD').replace(/[^a-z0-9]/g,'');
+    const email=slug+'@ltd.com';
+    try{
+      const cr=await createUserWithEmailAndPassword(secAuth,email,defPass);
+      await signOut(secAuth);
+      await setDoc(doc(db,'users',cr.user.uid),{email,nomJeu:nom,rangId:'',role:'user',mdp:'LTD2026!',createdAt:serverTimestamp()});
+      created++;
+    }catch(e){
+      // Email déjà pris → essayer avec un suffixe
+      try{
+        const email2=slug+Math.floor(Math.random()*900+100)+'@ltd.com';
+        const cr2=await createUserWithEmailAndPassword(secAuth,email2,defPass);
+        await signOut(secAuth);
+        await setDoc(doc(db,'users',cr2.user.uid),{email:email2,nomJeu:nom,rangId:'',role:'user',createdAt:serverTimestamp()});
+        created++;
+      }catch(e2){errors.push(nom);}
+    }
+  }
+  let msg=created+' compte'+(created>1?'s':'')+' créé'+(created>1?'s':'')+' !\nMot de passe par défaut : '+defPass;
+  if(errors.length)msg+='\n\nÉchecs : '+errors.join(', ');
+  alert(msg);
+});
+
+// ════ RESET MOT DE PASSE (admin) ════
+window.resetMdp=async function(btn){
+  const email=btn.dataset.email;
+  const uid=btn.dataset.id;
+  const newPass=prompt('Nouveau mot de passe pour '+email+' :', 'LTD2026!');
+  if(!newPass||newPass.length<6){alert('Mot de passe trop court (min 6 caractères)');return;}
+  const oldPass=prompt('Mot de passe ACTUEL de cet employé (nécessaire pour la réinitialisation) :');
+  if(!oldPass)return;
+  try{
+    const cr=await signInWithEmailAndPassword(secAuth,email,oldPass);
+    await updatePassword(cr.user,newPass);
+    await signOut(secAuth);
+    await setDoc(doc(db,'users',uid),{mdp:newPass},{merge:true});
+    alert('✅ Mot de passe changé avec succès !');
+  }catch(e){
+    alert('❌ Erreur : '+e.message+'\n\nSi le mot de passe actuel est inconnu, changez-le directement dans Firebase Console → Authentication.');
+  }
+};
+
+// ════ CHANGER MOT DE PASSE (vendor) ════
+document.getElementById('btn-mdp-save')?.addEventListener('click', async()=>{
+  const oldP=$('mdp-old').value;
+  const newP=$('mdp-new').value;
+  const confP=$('mdp-conf').value;
+  const msg=$('mdp-msg');
+  if(!oldP||!newP){msg.style.color='var(--red)';msg.textContent='Remplis tous les champs.';return;}
+  if(newP.length<6){msg.style.color='var(--red)';msg.textContent='Minimum 6 caractères.';return;}
+  if(newP!==confP){msg.style.color='var(--red)';msg.textContent='Les mots de passe ne correspondent pas.';return;}
+  try{
+    const cred=EmailAuthProvider.credential(aUser.email,oldP);
+    await reauthenticateWithCredential(aUser,cred);
+    await updatePassword(aUser,newP);
+    if(uProf)await setDoc(doc(db,'users',aUser.uid),{mdp:newP},{merge:true});
+    msg.style.color='var(--green)';msg.textContent='✅ Mot de passe modifié !';
+    $('mdp-old').value='';$('mdp-new').value='';$('mdp-conf').value='';
+  }catch(e){
+    msg.style.color='var(--red)';
+    msg.textContent=e.code==='auth/wrong-password'?'Mot de passe actuel incorrect.':'Erreur : '+e.message;
+  }
+});
 
 // ════ MODAL ════
 function showModal(title,content,onSave){$('mtitle').textContent=title;$('mcontent').innerHTML=content;$('msave').onclick=onSave;$('modal-overlay').classList.add('open');}
