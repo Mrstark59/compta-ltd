@@ -751,7 +751,16 @@ function renderStock(){
     </div>`;
   }).join('')||'<div class="empty"><div class="ei">📦</div>Aucun mouvement</div>';
   let d=[...STK];
-  if(sr)d=d.filter(x=>(x.item||'').toLowerCase().includes(sr)||(x.nomJeu||'').toLowerCase().includes(sr));
+  // Exclure les items masqués du stock (showInStock===false)
+  d=d.filter(x=>{
+    const pm=produits.find(p=>p.igNom&&p.igNom.toLowerCase()===(x.item||'').toLowerCase());
+    return !(pm&&pm.showInStock===false);
+  });
+  if(sr)d=d.filter(x=>{
+    const pm=produits.find(p=>p.igNom&&p.igNom.toLowerCase()===(x.item||'').toLowerCase());
+    const lbl=pm?pm.nom:x.item||'';
+    return lbl.toLowerCase().includes(sr)||(x.item||'').toLowerCase().includes(sr)||(x.nomJeu||'').toLowerCase().includes(sr);
+  });
   if(tp)d=d.filter(x=>x.type===tp);
   $('stkb').innerHTML=d.slice(0,30).map(x=>`<tr><td class="tm">${x.date||fmtD(x.timestamp)}</td><td style="font-weight:600">${x.item||'—'}</td><td><span class="bdg ${x.type==='add'?'bg':'br'}">${x.type==='add'?'+':'-'}</span></td><td class="tmono" style="color:${x.type==='add'?'var(--green)':'var(--red)'}">${x.type==='add'?'+':'-'}${x.count||0}</td><td class="tm">${x.nomJeu||x.name||'—'}</td></tr>`).join('')||'<tr><td colspan="5"><div class="empty"><div class="ei">📦</div>Aucun mouvement</div></td></tr>';
 }
