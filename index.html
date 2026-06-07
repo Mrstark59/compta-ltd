@@ -314,6 +314,7 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
       <!-- PROD RECAP -->
       <section id="tab-prod-recap" class="tab">
         <div class="ptitle">Récap Production</div><div class="psub" id="pr-week-lbl"></div>
+        <div style="margin-bottom:1.25rem"><button class="btn-s" onclick="window.openAddProdDecl()">+ Ajouter une déclaration</button></div>
         <div id="prstats" class="srow"></div>
         <div class="card"><div class="ctitle">Déclarations</div><div class="tw"><table><thead><tr><th>Date</th><th>Employé</th><th>Item</th><th>Quantité</th></tr></thead><tbody id="prb"></tbody></table></div></div>
       </section>
@@ -753,6 +754,34 @@ function renderProdRecap(){
   $('prstats').innerHTML=Object.entries(im).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([i,q])=>`<div class="sc p"><div class="sl">${i}</div><div class="sv">${fmtN(q)}</div><div class="ss">unités</div></div>`).join('');
   $('prb').innerHTML=d.map(x=>`<tr><td class="tm">${fmtD(x.timestamp)}</td><td style="font-weight:600">${x.nomJeu||'—'}</td><td>${x.item||'—'}</td><td class="tmono" style="color:var(--pl)">${x.quantite||0}</td></tr>`).join('')|| '<tr><td colspan="4"><div class="empty"><div class="ei">🏭</div>Aucune déclaration</div></td></tr>';
 }
+
+window.openAddProdDecl=function(){
+  const empOpts=USERS.filter(u=>u.role!=='admin'&&u.nomJeu).map(u=>`<option value="${u.nomJeu}">${u.nomJeu}</option>`).join('');
+  const prodOpts=produits.filter(p=>p.production).map(p=>`<option value="${p.nom}">${p.nom}${p.prix>0?' (+'+p.prix+'$/u)':''}</option>`).join('');
+  const html=`
+    <div class="mf"><label class="ml">Employé</label>
+      <select id="pd-emp" class="inp fs" style="width:100%">
+        <option value="">— Choisir un employé —</option>${empOpts}
+      </select>
+    </div>
+    <div class="mf"><label class="ml">Produit</label>
+      <select id="pd-item" class="inp fs" style="width:100%">
+        <option value="">— Choisir un produit —</option>${prodOpts}
+      </select>
+    </div>
+    <div class="mf"><label class="ml">Quantité</label>
+      <input id="pd-qty" type="number" min="1" class="inp" placeholder="0" style="width:120px"/>
+    </div>`;
+  showModal('Ajouter une déclaration',html,async()=>{
+    const nomJeu=document.getElementById('pd-emp')?.value;
+    const item=document.getElementById('pd-item')?.value;
+    const qty=parseInt(document.getElementById('pd-qty')?.value)||0;
+    if(!nomJeu||!item||qty<=0){alert('Remplis tous les champs.');return;}
+    const u=USERS.find(x=>x.nomJeu===nomJeu);
+    await addDoc(collection(db,'productions'),{userId:u?.id||'admin',nomJeu,item,quantite:qty,timestamp:serverTimestamp()});
+    hideModal();
+  });
+};
 
 function renderProduits(){
   const grid=document.getElementById('produits-grid');if(!grid)return;
