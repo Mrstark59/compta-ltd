@@ -316,7 +316,7 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
         <div class="ptitle">Récap Production</div><div class="psub" id="pr-week-lbl"></div>
         <div style="margin-bottom:1.25rem"><button class="btn-s" onclick="window.openAddProdDecl()">+ Ajouter une déclaration</button></div>
         <div id="prstats" class="srow"></div>
-        <div class="card"><div class="ctitle">Déclarations</div><div class="tw"><table><thead><tr><th>Date</th><th>Employé</th><th>Item</th><th>Quantité</th></tr></thead><tbody id="prb"></tbody></table></div></div>
+        <div class="card"><div class="ctitle">Déclarations</div><div class="tw"><table><thead><tr><th>Date</th><th>Employé</th><th>Item</th><th>Quantité</th><th></th></tr></thead><tbody id="prb"></tbody></table></div></div>
       </section>
 
       <!-- PRODUITS -->
@@ -721,7 +721,18 @@ function renderSalaries(){
   const missing=Object.keys(empMap).filter(n=>n!=='Inconnu'&&n&&!knownNames.includes(n.toLowerCase()));
   const syncBanner=document.getElementById('sync-banner'),syncMsg=document.getElementById('sync-msg');
   if(syncBanner&&syncMsg){if(missing.length>0){syncBanner.style.display='flex';syncMsg.textContent=missing.length+' employé'+(missing.length>1?'s':'')+ ' détecté'+(missing.length>1?'s':'')+' sans compte : '+missing.join(', ');}else{syncBanner.style.display='none';}}
-  $('sal-body').innerHTML=rows.length?rows.map(([n,d])=>`<tr><td style="font-weight:700">${n}</td><td>${getRang(n)}</td><td class="tmono" style="color:var(--green)">${fmt(d.ca)}</td><td class="tmono" style="color:var(--gold)">${fmt(Math.round(d.ca*.3))}</td><td class="tmono" style="color:var(--teal)">${fmtDur(d.minSvc)}</td><td class="tmono" style="color:var(--pl)">${d.nbFac}</td></tr>`).join(''):'<tr><td colspan="6"><div class="empty"><div class="ei">👥</div>Aucun employé actif cette semaine</div></td></tr>';
+  $('sal-body').innerHTML=rows.length?rows.map(([n,d])=>{
+    const salBase=Math.round(d.ca*.3);
+    const bonus=d.bonusProd||0;
+    const salTotal=salBase+bonus;
+    return`<tr>
+      <td style="font-weight:700">${n}</td>
+      <td>${getRang(n)}</td>
+      <td class="tmono" style="color:var(--green)">${fmt(d.ca)}</td>
+      <td class="tmono" style="color:var(--gold)">${fmt(salTotal)}${bonus>0?`<span style="font-size:.7rem;color:var(--teal);margin-left:.4rem">(+${fmt(bonus)} prod)</span>`:''}</td>
+      <td class="tmono" style="color:var(--teal)">${fmtDur(d.minSvc)}</td>
+      <td class="tmono" style="color:var(--pl)">${d.nbFac}</td>
+    </tr>`;}).join(''):'<tr><td colspan="6"><div class="empty"><div class="ei">👥</div>Aucun employé actif cette semaine</div></td></tr>';
 }
 
 function renderFactures(){
@@ -752,7 +763,7 @@ function renderStations(){
 function renderProdRecap(){
   const d=weekPROD(),im={};for(const x of d)im[x.item||'?']=(im[x.item||'?']||0)+(x.quantite||0);
   $('prstats').innerHTML=Object.entries(im).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([i,q])=>`<div class="sc p"><div class="sl">${i}</div><div class="sv">${fmtN(q)}</div><div class="ss">unités</div></div>`).join('');
-  $('prb').innerHTML=d.map(x=>`<tr><td class="tm">${fmtD(x.timestamp)}</td><td style="font-weight:600">${x.nomJeu||'—'}</td><td>${x.item||'—'}</td><td class="tmono" style="color:var(--pl)">${x.quantite||0}</td></tr>`).join('')|| '<tr><td colspan="4"><div class="empty"><div class="ei">🏭</div>Aucune déclaration</div></td></tr>';
+  $('prb').innerHTML=d.map(x=>`<tr><td class="tm">${fmtD(x.timestamp)}</td><td style="font-weight:600">${x.nomJeu||'—'}</td><td>${x.item||'—'}</td><td class="tmono" style="color:var(--pl)">${x.quantite||0}</td><td><button class="btn-d" style="font-size:.7rem;padding:.2rem .45rem" onclick="window.delProd('${x.id}')">🗑️</button></td></tr>`).join('')||'<tr><td colspan="5"><div class="empty"><div class="ei">🏭</div>Aucune déclaration</div></td></tr>';
 }
 
 window.openAddProdDecl=function(){
@@ -813,6 +824,11 @@ function renderProduits(){
     </div>`;
   }).join('');
 }
+
+window.delProd=async function(id){
+  if(!confirm('Supprimer cette déclaration ?'))return;
+  await deleteDoc(doc(db,'productions',id));
+};
 
 window.toggleProduction=async function(id, enable){
   const p=produits.find(x=>x.id===id);
