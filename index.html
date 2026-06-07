@@ -402,6 +402,7 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
           <div class="card" style="border-color:rgba(16,185,129,.3)">
             <div class="ctitle" style="color:var(--green)">📈 Revenus</div>
             <div class="rr"><div class="rl">Chiffre d'affaires</div><div class="rv" id="imp-ca" style="color:var(--green)">—</div></div>
+            <div class="rr"><div class="rl">Nombre d'employés</div><div style="flex:1;display:flex;align-items:center;gap:.5rem;justify-content:flex-end"><input id="imp-nb-emp" type="number" min="1" class="corr-inp" placeholder="0" style="width:80px;text-align:right" oninput="calcImpots()"/><span style="font-size:.72rem;color:var(--muted)">salariés</span></div></div>
             <div class="rr"><div class="rl" style="font-size:.75rem;color:var(--muted)">Autres revenus</div><input id="imp-autres-rev" type="number" min="0" class="corr-inp" placeholder="0" style="width:110px;text-align:right;margin-left:auto" oninput="calcImpots()"/></div>
           </div>
 
@@ -917,7 +918,7 @@ document.getElementById('btn-mdp-save')?.addEventListener('click',async()=>{
 function renderImpots(){
   const facW=weekFAC();
   const txW=weekTX();
-  const nbEmp=USERS.length||Object.keys(weekFAC().filter(f=>f.status==='payee'&&f.emetteur&&f.emetteur!=='Inconnu').reduce((m,f)=>{m[f.emetteur]=1;return m;},{})).length||1;
+  const nbEmp=parseInt(document.getElementById('imp-nb-emp')?.value)||USERS.length||1;
 
   // Numéro de semaine courante
   const {start}=getWeekBounds(selectedWeekOffset);
@@ -961,6 +962,9 @@ function renderImpots(){
   const f=v=>Number(Math.round(v)).toLocaleString('fr-FR')+'$';
   const el=id=>document.getElementById(id);
 
+  // Préremplir nbEmp si vide
+  const nbEmpInput=el('imp-nb-emp');
+  if(nbEmpInput&&!nbEmpInput.value)nbEmpInput.value=USERS.length||'';
   if(el('imp-ca'))el('imp-ca').textContent=f(ca);
   if(el('imp-sal'))el('imp-sal').textContent=f(salTotal);
   if(el('imp-dep-brut'))el('imp-dep-brut').textContent=f(depBrut);
