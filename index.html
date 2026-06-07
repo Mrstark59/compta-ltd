@@ -429,7 +429,7 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
           <div class="card" style="border-color:rgba(239,68,68,.25)">
             <div class="ctitle" style="color:var(--red)">➖ Charges déductibles</div>
             <div class="rr"><div class="rl">Salaires employés</div><div class="rv" id="imp-sal" style="color:var(--red)">—</div></div>
-            <div class="rr"><div class="rl">Prime hebdomadaire</div><div style="flex:1"><input id="imp-prime-screen" type="number" min="0" class="corr-inp" placeholder="0" style="width:100%;text-align:right" oninput="calcImpots()"/></div></div>
+            <div class="rr"><div class="rl">Prime hebdomadaire</div><div style="flex:1"><input id="imp-prime-screen" type="number" min="0" class="corr-inp" placeholder="0" style="width:100%;text-align:right" oninput="calcImpots()"/><div id="imp-prime-detail" style="font-size:.7rem;color:var(--muted);margin-top:.25rem;text-align:right"></div></div></div>
             <div class="rr"><div class="rl">Prime mensuelle</div><div class="rv" id="imp-prime-mens-display" style="color:var(--red)">0$</div></div>
             <div class="rr"><div class="rl">Matière première</div><div class="rv" id="imp-mp-net" style="color:var(--red)">—</div></div>
             <div class="rr"><div class="rl" style="padding-left:.75rem;font-size:.75rem;color:var(--muted)">Dépenses brutes</div><div class="rv" id="imp-dep-brut" style="color:var(--muted);font-size:.78rem">—</div></div>
@@ -965,6 +965,13 @@ function renderImpots(){
   if(el('imp-sal'))el('imp-sal').textContent=f(salTotal);
   if(el('imp-dep-brut'))el('imp-dep-brut').textContent=f(depBrut);
   if(el('imp-nourr'))el('imp-nourr').textContent=f(nourr)+' ('+nbEmp+' × 750$)';
+
+  // Calcul prime hebdo auto
+  const primeParPers=Math.round(ca*0.005);
+  const nbBenef=Math.ceil(nbEmp*0.3);
+  const primeCalcAuto=primeParPers*nbBenef;
+  if(el('imp-prime-detail'))el('imp-prime-detail').textContent=
+    f(ca)+' × 0.5% = '+f(primeParPers)+'/emp × ⌈'+nbEmp+' × 30%⌉ = '+nbBenef+' emp → auto : '+f(primeCalcAuto);
 
   calcImpots();
 }
