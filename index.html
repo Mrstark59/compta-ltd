@@ -640,7 +640,7 @@ const weekSVC=()=>SVC.filter(s=>inSelectedWeek(s.debut));
 const weekPROD=()=>PROD.filter(p=>inSelectedWeek(p.timestamp));
 
 function renderEnService(){
-  const actifs=SVC.filter(s=>!s.fin&&s.employeNom);
+  const now=new Date();const actifs=SVC.filter(s=>!s.fin&&s.employeNom&&s.debut?.toDate&&(now-s.debut.toDate())<24*60*60*1000);
   const list=document.getElementById('en-service-list'),count=document.getElementById('en-service-count');
   if(!list||!count)return;
   count.textContent=actifs.length+' actif'+(actifs.length>1?'s':'');
@@ -939,10 +939,6 @@ function renderImpots(){
   // Dépenses brutes (sorties)
   const depBrut=txW.filter(t=>t.type==='sortie').reduce((s,t)=>s+(t.montant||0),0);
 
-  // Nourriture : 750$ par salarié
-  const nourr=750*nbEmp;
-  const locations=12950;
-
   // Prime mensuelle visible ? (numSem - 1) % 4 === 0
   const isPrimeSem=(numSem-1)%4===0;
   const nextPrimeSem=isPrimeSem?numSem:numSem+(4-((numSem-1)%4));
@@ -955,7 +951,7 @@ function renderImpots(){
   if(primeMensBadge)primeMensBadge.textContent='S'+numSem;
   if(primeMensNextLbl)primeMensNextLbl.textContent='Prochaine prime : S'+nextPrimeSem;
 
-  window._imp={ca,salTotal,depBrut,nourr,nbEmp,isPrimeSem};
+  window._imp={ca,salTotal,depBrut,isPrimeSem};
 
   const f=v=>Number(Math.round(v)).toLocaleString('fr-FR')+'$';
   const el=id=>document.getElementById(id);
@@ -967,7 +963,6 @@ function renderImpots(){
   if(el('imp-sal'))el('imp-sal').textContent=f(salTotal);
   if(el('imp-dep-brut'))el('imp-dep-brut').textContent=f(depBrut);
 
-  window._imp={ca,salTotal,depBrut,isPrimeSem};
   calcImpots();
 }
 
@@ -988,14 +983,13 @@ window.calcImpots=function(){
   const f=v=>Number(Math.round(v)).toLocaleString('fr-FR')+'$';
   const el=id=>document.getElementById(id);
 
+  const locations=12950;
   const autresRev=parseInt(el('imp-autres-rev')?.value)||0;
   const primeHebdo=parseInt(el('imp-prime-screen')?.value)||0;
   const fraisVeh=parseInt(el('imp-frais-veh')?.value)||0;
   const achatsVeh=parseInt(el('imp-achats-veh')?.value)||0;
   const cautionRem=parseInt(el('imp-caution-rem')?.value)||0;
   const dons=parseInt(el('imp-dons')?.value)||0;
-  const locations=12950;
-
   // Prime mensuelle saisie (seulement si semaine prime)
   const primeMens=isPrimeSem?(parseInt(el('imp-ben-cumul')?.value)||0):0;
   // Affichage prime mensuelle dans déductibles
