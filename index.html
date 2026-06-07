@@ -737,12 +737,21 @@ function renderSalaries(){
   $('sal-body').innerHTML=rows.length?rows.map(([n,d])=>{
     const salBase=Math.round(d.ca*.3);
     const bonus=d.bonusProd||0;
-    const salTotal=salBase+bonus;
+    let salTotal=salBase+bonus;
+    // Appliquer min/max du rang
+    const u=USERS.find(u=>u.nomJeu===n);
+    const rang=RANGS.find(r=>r.id===u?.rangId);
+    const salMin=rang?.salaireMin||0;
+    const salMax=rang?.salaireMax||0;
+    const salAvantBorne=salTotal;
+    if(salMin>0&&salTotal<salMin)salTotal=salMin;
+    if(salMax>0&&salTotal>salMax)salTotal=salMax;
+    const borneLbl=salTotal!==salAvantBorne?`<span style="font-size:.68rem;color:var(--gold);margin-left:.4rem">${salTotal>salAvantBorne?'▲ min':'▼ max'}</span>`:'';
     return`<tr>
       <td style="font-weight:700">${n}</td>
       <td>${getRang(n)}</td>
       <td class="tmono" style="color:var(--green)">${fmt(d.ca)}</td>
-      <td class="tmono" style="color:var(--gold)">${fmt(salTotal)}${bonus>0?`<span style="font-size:.7rem;color:var(--teal);margin-left:.4rem">(+${fmt(bonus)} prod)</span>`:''}</td>
+      <td class="tmono" style="color:var(--gold)">${fmt(salTotal)}${bonus>0?`<span style="font-size:.7rem;color:var(--teal);margin-left:.4rem">(+${fmt(bonus)} prod)</span>`:''}${borneLbl}</td>
       <td class="tmono" style="color:var(--teal)">${fmtDur(d.minSvc)}</td>
       <td class="tmono" style="color:var(--pl)">${d.nbFac}</td>
     </tr>`;}).join(''):'<tr><td colspan="6"><div class="empty"><div class="ei">👥</div>Aucun employé actif cette semaine</div></td></tr>';
@@ -925,19 +934,25 @@ const COLS=['#7c3aed','#10b981','#ef4444','#f59e0b','#6366f1','#14b8a6','#ec4899
 
 function renderRangs(){
   if(!RANGS.length){$('rangs-grid').innerHTML='<div class="empty"><div class="ei">⭐</div>Aucun rang créé</div>';return;}
-  $('rangs-grid').innerHTML=RANGS.map(r=>`<div class="rc"><div class="rch" style="background:${r.couleur||'#7c3aed'}18"><div class="rcn" style="color:${r.couleur||'#7c3aed'}">${r.nom||'Rang'}</div><span class="bdg" style="background:${r.couleur||'#7c3aed'}22;color:${r.couleur||'#7c3aed'}">${(r.objetsProduction||[]).length} obj.</span></div><div class="rcb">${Object.entries(PL).map(([k,l])=>`<div class="rp"><span>${r.permissions?.[k]?'✅':'❌'}</span><span>${l}</span></div>`).join('')}<div class="ract"><button class="btn-s" style="font-size:.74rem;padding:.38rem .75rem" onclick="window.editRang(this)" data-id="${r.id}">✏️ Modifier</button><button class="btn-d" style="font-size:.74rem;padding:.38rem .75rem" onclick="window.delRang(this)" data-id="${r.id}" data-nom="${r.nom}">🗑️</button></div></div></div>`).join('');
+  $('rangs-grid').innerHTML=RANGS.map(r=>`<div class="rc"><div class="rch" style="background:${r.couleur||'#7c3aed'}18"><div class="rcn" style="color:${r.couleur||'#7c3aed'}">${r.nom||'Rang'}</div><span class="bdg" style="background:${r.couleur||'#7c3aed'}22;color:${r.couleur||'#7c3aed'}">${(r.objetsProduction||[]).length} obj.</span></div><div class="rcb">${r.salaireMin>0||r.salaireMax>0?`<div style="display:flex;gap:.75rem;margin-bottom:.5rem;font-size:.75rem"><span style="color:var(--muted)">Salaire :</span>${r.salaireMin>0?'<span style=\"color:var(--green)\">min '+Number(r.salaireMin).toLocaleString('fr-FR')+'$</span>':''}${r.salaireMax>0?' <span style=\"color:var(--red)\">max '+Number(r.salaireMax).toLocaleString('fr-FR')+'$</span>':''}</div>`:''}${Object.entries(PL).map(([k,l])=>`<div class="rp"><span>${r.permissions?.[k]?'✅':'❌'}</span><span>${l}</span></div>`).join('')}<div class="ract"><button class="btn-s" style="font-size:.74rem;padding:.38rem .75rem" onclick="window.editRang(this)" data-id="${r.id}">✏️ Modifier</button><button class="btn-d" style="font-size:.74rem;padding:.38rem .75rem" onclick="window.delRang(this)" data-id="${r.id}" data-nom="${r.nom}">🗑️</button></div></div></div>`).join('');
 }
 $('btn-cr')?.addEventListener('click',()=>openRangModal(null));
 window.editRang=btn=>{const r=RANGS.find(x=>x.id===btn.dataset.id);if(r)openRangModal(r);};
 window.delRang=btn=>{showModal(`Supprimer "${btn.dataset.nom}" ?`,'<p style="color:var(--muted);font-size:.9rem">Cette action est irréversible.</p>',async()=>{await deleteDoc(doc(db,'rangs',btn.dataset.id));hideModal();});};
 function openRangModal(r){
   let sc=r?.couleur||COLS[0];
-  const html=`<div class="mf"><label class="ml">Nom du rang</label><input id="rn" type="text" class="inp" value="${r?.nom||''}" placeholder="Ex: Vendeur Confirmé"/></div><div class="mf"><label class="ml">Couleur</label><div class="cpr">${COLS.map(c=>`<div class="cd${c===sc?' sel':''}" style="background:${c}" data-c="${c}" onclick="window.pc('${c}')"></div>`).join('')}</div></div><div class="mf"><label class="ml">Onglets visibles</label><div class="pgrid">${Object.entries(PL).map(([k,l])=>`<label class="ptog${r?.permissions?.[k]?' on':''}" id="pt_${k}"><input type="checkbox"${r?.permissions?.[k]?' checked':''} onchange="window.tp('${k}',this.checked)"><div class="pd"></div><span class="ptl">${l}</span></label>`).join('')}</div></div><div class="mf"><label class="ml">Produits déclarables</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-top:.25rem">${produits.length?produits.map(p=>`<label class="ptog${(r?.produitsIds||[]).includes(p.id)?' on':''}" id="pp_${p.id}"><span>${p.nom}</span><input type="checkbox"${(r?.produitsIds||[]).includes(p.id)?' checked':''} onchange="window.tpp('${p.id}',this.checked)"></label>`).join(''):'<p style="color:var(--muted);font-size:.82rem">Aucun produit créé</p>'}</div></div>`;
+  const html=`<div class="mf"><label class="ml">Nom du rang</label><input id="rn" type="text" class="inp" value="${r?.nom||''}" placeholder="Ex: Vendeur Confirmé"/></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem" class="mf">
+      <div><label class="ml">Salaire minimum</label><input id="rsal-min" type="number" min="0" class="inp" value="${r?.salaireMin||0}" placeholder="0"/><div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">0 = pas de minimum</div></div>
+      <div><label class="ml">Salaire maximum</label><input id="rsal-max" type="number" min="0" class="inp" value="${r?.salaireMax||0}" placeholder="0"/><div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">0 = pas de plafond</div></div>
+    </div><div class="mf"><label class="ml">Couleur</label><div class="cpr">${COLS.map(c=>`<div class="cd${c===sc?' sel':''}" style="background:${c}" data-c="${c}" onclick="window.pc('${c}')"></div>`).join('')}</div></div><div class="mf"><label class="ml">Onglets visibles</label><div class="pgrid">${Object.entries(PL).map(([k,l])=>`<label class="ptog${r?.permissions?.[k]?' on':''}" id="pt_${k}"><input type="checkbox"${r?.permissions?.[k]?' checked':''} onchange="window.tp('${k}',this.checked)"><div class="pd"></div><span class="ptl">${l}</span></label>`).join('')}</div></div><div class="mf"><label class="ml">Produits déclarables</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-top:.25rem">${produits.length?produits.map(p=>`<label class="ptog${(r?.produitsIds||[]).includes(p.id)?' on':''}" id="pp_${p.id}"><span>${p.nom}</span><input type="checkbox"${(r?.produitsIds||[]).includes(p.id)?' checked':''} onchange="window.tpp('${p.id}',this.checked)"></label>`).join(''):'<p style="color:var(--muted);font-size:.82rem">Aucun produit créé</p>'}</div></div>`;
   showModal(r?`Modifier "${r.nom}"`:'Créer un rang',html,async()=>{
     const nom=$('rn').value.trim();if(!nom){alert('Nom obligatoire');return;}
     const ps={};Object.keys(PL).forEach(k=>{ps[k]=$('pt_'+k)?.classList.contains('on')||false;});
     const pids=produits.filter(p=>document.getElementById('pp_'+p.id)?.querySelector('input')?.checked).map(p=>p.id);
-    const data={nom,couleur:sc,permissions:ps,produitsIds:pids};
+    const salaireMin=parseInt(document.getElementById('rsal-min')?.value)||0;
+    const salaireMax=parseInt(document.getElementById('rsal-max')?.value)||0;
+    const data={nom,couleur:sc,permissions:ps,produitsIds:pids,salaireMin,salaireMax};
     if(r)await setDoc(doc(db,'rangs',r.id),data,{merge:true});
     else{data.createdAt=serverTimestamp();await addDoc(collection(db,'rangs'),data);}
     hideModal();
