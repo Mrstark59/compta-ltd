@@ -1027,8 +1027,9 @@ window.calcImpots=function(){
     {label:'T5 (46%)',min:500001,max:Infinity,taux:0.46}
   ];
   const base=Math.max(0,benImp);
+  // Tranche déterminée par le CA, impôt appliqué sur la base imposable
   let tauxApplique=0,trancheLabel='T0 (0%)';
-  for(const t of TRANCHES){if(base>=t.min){tauxApplique=t.taux;trancheLabel=t.label;}}
+  for(const t of TRANCHES){if(totalRev>=t.min){tauxApplique=t.taux;trancheLabel=t.label;}}
   const impots=Math.round(base*tauxApplique);
   let tranchesHtml=TRANCHES.map(t=>{
     const active=t.label===trancheLabel;
