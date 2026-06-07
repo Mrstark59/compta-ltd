@@ -254,6 +254,7 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
         <button class="nb" data-tab="factures">🧾 Factures</button>
         <button class="nb" data-tab="prod-recap">🏭 Production</button>
         <button class="nb" data-tab="stations">⛽ Mise en stations</button>
+        <button class="nb" data-tab="impots">📋 Impôts</button>
         <div class="nav-sec">Administration</div>
         <button class="nb" data-tab="rangs">⭐ Rangs</button>
         <button class="nb" data-tab="produits">🏷️ Produits</button>
@@ -565,13 +566,13 @@ function refreshAll(){
   updateWeekLabels();
   renderBilan();renderTX();renderStock();
   renderSalaries();renderFactures();renderProdRecap();
-  if(isAdmin){renderStations();renderEnService();}
+  if(isAdmin){renderStations();renderEnService();renderImpots();}
   if(!isAdmin){renderVendorTableau();renderMyServices();renderMyProd();}
 }
 
 function updateWeekLabels(){
   const lbl=weekLabel(selectedWeekOffset);
-  const els=['b-week-lbl','tx-week-lbl','sal-week-lbl','fac-week-lbl','pr-week-lbl','vt-week-lbl','mp-week-lbl','svc-week-lbl','sta-week-lbl'];
+  const els=['b-week-lbl','tx-week-lbl','sal-week-lbl','fac-week-lbl','pr-week-lbl','vt-week-lbl','mp-week-lbl','svc-week-lbl','sta-week-lbl','imp-week-lbl'];
   els.forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=lbl;});
 }
 
@@ -647,7 +648,7 @@ function startListeners(){
   });
   const cutoffTs=Timestamp.fromDate(cutoff);
   unsubs.push(onSnapshot(query(collection(db,'transactions'),orderBy('timestamp','desc'),limit(1000)),s=>{TX=jsFilter(s.docs.map(d=>({id:d.id,...d.data()})));renderBilan();renderTX();if(!isAdmin)renderVendorTableau();}));
-  unsubs.push(onSnapshot(query(collection(db,'factures'),orderBy('timestamp','desc'),limit(1000)),s=>{FAC=jsFilter(s.docs.map(d=>({id:d.id,...d.data()})));renderFactures();renderSalaries();renderBilan();if(!isAdmin)renderVendorTableau();}));
+  unsubs.push(onSnapshot(query(collection(db,'factures'),orderBy('timestamp','desc'),limit(1000)),s=>{FAC=jsFilter(s.docs.map(d=>({id:d.id,...d.data()})));renderFactures();renderSalaries();renderBilan();if(isAdmin)renderImpots();if(!isAdmin)renderVendorTableau();}));
   unsubs.push(onSnapshot(query(collection(db,'stock_mouvements'),orderBy('timestamp','desc'),limit(2000)),s=>{STK=jsFilter(s.docs.map(d=>({id:d.id,...d.data()})));renderStock();}));
   unsubs.push(onSnapshot(query(collection(db,'services'),orderBy('debut','desc'),limit(500)),s=>{SVC=s.docs.map(d=>({id:d.id,...d.data()})).filter(d=>d.debut?.toDate?.()>=cutoff);renderSalaries();if(!isAdmin){renderMyServices();renderVendorTableau();}}));
   unsubs.push(onSnapshot(query(collection(db,'productions'),orderBy('timestamp','desc'),limit(500)),s=>{PROD=jsFilter(s.docs.map(d=>({id:d.id,...d.data()})));renderProdRecap();if(!isAdmin)renderMyProd();}));
@@ -1230,6 +1231,112 @@ document.getElementById('btn-mdp-save')?.addEventListener('click', async()=>{
     msg.textContent=e.code==='auth/wrong-password'?'Mot de passe actuel incorrect.':'Erreur : '+e.message;
   }
 });
+
+// ════ IMPÔTS ════
+function renderImpots(){
+  const facW=weekFAC();
+  const txW=weekTX();
+  const nbEmp=USERS.filter(u=>u.role!=='admin').length||1;
+
+  // CA
+  const ca=facW.filter(f=>f.status==='payee').reduce((s,f)=>s+(f.montant||0),0);
+
+  // Salaires (30% du CA par employé depuis les factures, cap salaireMax)
+  const salTotal=Object.values(
+    facW.filter(f=>f.status==='payee').reduce((m,f)=>{
+      const n=f.emetteur||'Inconnu';
+      if(n==='Inconnu')return m;
+      if(!m[n])m[n]=0;
+      m[n]+=f.montant||0;
+      return m;
+    },{})
+  ).reduce((s,ca)=>s+Math.round(ca*0.3),0);
+
+  // Prime hebdo calculée : 0.5% CA × ceil(30% × nbEmp)
+  const primeParPers=Math.round(ca*0.005);
+  const nbBenef=Math.ceil(nbEmp*0.3);
+  const primeCalcTotal=primeParPers*nbBenef;
+
+  // Dépenses brutes (sorties)
+  const depBrut=txW.filter(t=>t.type==='sortie').reduce((s,t)=>s+(t.montant||0),0);
+
+  // Nourriture : 750$ par salarié
+  const nourr=750*nbEmp;
+  const locations=12950;
+
+  // Stocker pour calcImpots
+  window._imp={ca,salTotal,primeCalcTotal,primeParPers,nbBenef,depBrut,nourr,nbEmp};
+
+  // Affichage
+  const f=v=>Number(v).toLocaleString('fr-FR')+'$';
+  const el=id=>document.getElementById(id);
+
+  if(el('imp-ca'))el('imp-ca').textContent=f(ca);
+  if(el('imp-sal'))el('imp-sal').textContent=f(salTotal);
+  if(el('imp-prime-calc'))el('imp-prime-calc').textContent=f(primeCalcTotal);
+  if(el('imp-prime-detail'))el('imp-prime-detail').textContent=`${f(primeParPers)}/pers × ${nbBenef} bénéficiaires (30% de ${nbEmp} emp.)`;
+  if(el('imp-dep-brut'))el('imp-dep-brut').textContent=f(depBrut);
+  if(el('imp-nourr'))el('imp-nourr').textContent=f(nourr)+` (${nbEmp} × 750$)`;
+
+  calcImpots();
+}
+
+window.calcImpots=function(){
+  if(!window._imp)return;
+  const {ca,salTotal,primeCalcTotal,depBrut,nourr,nbEmp}=window._imp;
+  const f=v=>Number(Math.round(v)).toLocaleString('fr-FR')+'$';
+  const el=id=>document.getElementById(id);
+
+  const primeScreen=parseInt(el('imp-prime-screen')?.value)||0;
+  const fraisVeh=parseInt(el('imp-frais-veh')?.value)||0;
+  const achatsVeh=parseInt(el('imp-achats-veh')?.value)||0;
+  const nonDed=parseInt(el('imp-non-ded')?.value)||0;
+  const locations=12950;
+
+  // Matières premières nettes
+  const mpNet=Math.max(0,depBrut-nourr-locations-fraisVeh-achatsVeh);
+  if(el('imp-mp-net'))el('imp-mp-net').textContent=f(mpNet);
+
+  // Total déductibles
+  const totalDed=salTotal+primeCalcTotal+primeScreen+nourr+locations+fraisVeh+achatsVeh+mpNet;
+
+  // Bénéfice brut = CA - déductibles - non déductibles
+  const benBrut=ca-totalDed-nonDed;
+
+  // Bénéfice imposable = CA - déductibles (sans non-déductibles)
+  const benImp=ca-totalDed;
+
+  // Impôts : si CA > 500k → 46% du bénéfice imposable
+  const imposable=ca>500000;
+  const impots=imposable?Math.max(0,Math.round(benImp*0.46)):0;
+  const netApresImpots=benBrut-impots;
+
+  if(el('rec-ca'))el('rec-ca').textContent=f(ca);
+  if(el('rec-ded'))el('rec-ded').textContent=f(totalDed);
+  if(el('rec-nded'))el('rec-nded').textContent=f(nonDed);
+  if(el('rec-ben'))el('rec-ben').textContent=f(benBrut);
+  if(el('rec-benimp'))el('rec-benimp').textContent=f(benImp);
+  const trancheRow=el('rec-tranche-row');
+  if(trancheRow)trancheRow.style.display=imposable?'flex':'none';
+  if(el('rec-impots'))el('rec-impots').textContent=imposable?f(impots):'Non imposable (CA ≤ 500k)';
+  if(el('rec-net'))el('rec-net').textContent=f(netApresImpots);
+};
+
+window.calcPrimeMensuelle=function(){
+  const benCumul=parseInt(document.getElementById('imp-ben-cumul')?.value)||0;
+  const el=id=>document.getElementById(id);
+  const f=v=>Number(Math.round(v)).toLocaleString('fr-FR')+'$';
+  if(benCumul<=0){if(el('prime-mensuelle-val'))el('prime-mensuelle-val').textContent='—';return;}
+  let pct=0,max=0,lbl='';
+  if(benCumul<=150000){pct=0.30;max=45000;lbl='Tranche 1 (≤150k) : 30%';}
+  else if(benCumul<=300000){pct=0.17;max=51000;lbl='Tranche 2 (150-300k) : 17%';}
+  else if(benCumul<=600000){pct=0.10;max=60000;lbl='Tranche 3 (300-600k) : 10%';}
+  else if(benCumul<=900000){pct=0.08;max=72000;lbl='Tranche 4 (600-900k) : 8%';}
+  else{pct=0.065;max=91000;lbl='Tranche 5 (>900k) : 6,5%';}
+  const prime=Math.min(Math.round(benCumul*pct),max);
+  if(el('prime-mensuelle-val'))el('prime-mensuelle-val').textContent=f(prime);
+  if(el('prime-mensuelle-tranche'))el('prime-mensuelle-tranche').textContent=lbl+' — MAX '+f(max);
+};
 
 // ════ AUTO-REFRESH SERVICE EN COURS (toutes les minutes) ════
 setInterval(()=>{ if(uProf?.role==='admin') renderEnService(); }, 60000);
