@@ -630,13 +630,18 @@ document.querySelectorAll('.nb').forEach(b=>b.addEventListener('click',()=>swTab
 // ════ LISTENERS ════
 function startListeners(){
   const isAdmin=uProf?.role==='admin';
+  // Filtre JS — évite les index Firestore composites
   const cutoff=new Date(Date.now()-14*24*60*60*1000);
+  const jsFilter=arr=>arr.filter(d=>{
+    const ts=d.timestamp?.toDate?.()??d.debut?.toDate?.()??null;
+    return ts?ts>=cutoff:true;
+  });
   const cutoffTs=Timestamp.fromDate(cutoff);
-  unsubs.push(onSnapshot(query(collection(db,'transactions'),where('timestamp','>=',cutoffTs),orderBy('timestamp','desc')),s=>{TX=s.docs.map(d=>({id:d.id,...d.data()}));renderBilan();renderTX();if(!isAdmin)renderVendorTableau();}));
-  unsubs.push(onSnapshot(query(collection(db,'factures'),where('timestamp','>=',cutoffTs),orderBy('timestamp','desc')),s=>{FAC=s.docs.map(d=>({id:d.id,...d.data()}));renderFactures();renderSalaries();renderBilan();if(!isAdmin)renderVendorTableau();}));
-  unsubs.push(onSnapshot(query(collection(db,'stock_mouvements'),where('timestamp','>=',cutoffTs),orderBy('timestamp','desc')),s=>{STK=s.docs.map(d=>({id:d.id,...d.data()}));renderStock();}));
+  unsubs.push(onSnapshot(query(collection(db,'transactions'),orderBy('timestamp','desc'),limit(1000)),s=>{TX=jsFilter(s.docs.map(d=>({id:d.id,...d.data()})));renderBilan();renderTX();if(!isAdmin)renderVendorTableau();}));
+  unsubs.push(onSnapshot(query(collection(db,'factures'),orderBy('timestamp','desc'),limit(1000)),s=>{FAC=jsFilter(s.docs.map(d=>({id:d.id,...d.data()})));renderFactures();renderSalaries();renderBilan();if(!isAdmin)renderVendorTableau();}));
+  unsubs.push(onSnapshot(query(collection(db,'stock_mouvements'),orderBy('timestamp','desc'),limit(2000)),s=>{STK=jsFilter(s.docs.map(d=>({id:d.id,...d.data()})));renderStock();}));
   unsubs.push(onSnapshot(query(collection(db,'services'),orderBy('debut','desc'),limit(500)),s=>{SVC=s.docs.map(d=>({id:d.id,...d.data()})).filter(d=>d.debut?.toDate?.()>=cutoff);renderSalaries();if(!isAdmin){renderMyServices();renderVendorTableau();}}));
-  unsubs.push(onSnapshot(query(collection(db,'productions'),where('timestamp','>=',cutoffTs),orderBy('timestamp','desc')),s=>{PROD=s.docs.map(d=>({id:d.id,...d.data()}));renderProdRecap();if(!isAdmin)renderMyProd();}));
+  unsubs.push(onSnapshot(query(collection(db,'productions'),orderBy('timestamp','desc'),limit(500)),s=>{PROD=jsFilter(s.docs.map(d=>({id:d.id,...d.data()})));renderProdRecap();if(!isAdmin)renderMyProd();}));
   unsubs.push(onSnapshot(query(collection(db,'station_fills'),orderBy('timestamp','desc'),limit(500)),s=>{STATIONS=s.docs.map(d=>({id:d.id,...d.data()})).filter(d=>d.timestamp?.toDate?.()>=cutoff);if(isAdmin)renderStations();}));
   // Produits catalogue — needed by admin AND vendor
   unsubs.push(onSnapshot(query(collection(db,'produits'),orderBy('nom')),s=>{produits=s.docs.map(d=>({id:d.id,...d.data()}));if(isAdmin){renderProduits();renderRangs();renderStock();}else{buildProdDropdown();}}));
