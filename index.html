@@ -993,7 +993,17 @@ function renderVendorTableau(){
   if(!uProf||uProf.role==='admin')return;
   const nom=uProf.nomJeu||'';
   const mf=weekFAC().filter(f=>f.emetteur===nom&&f.status==='payee');
-  const ca=mf.reduce((s,f)=>s+(f.montant||0),0),sal=Math.round(ca*.3);
+  const ca=mf.reduce((s,f)=>s+(f.montant||0),0);
+  // Bonus production
+  const prodBonus=weekPROD().filter(p=>p.nomJeu===nom).reduce((s,p)=>{
+    const prodDef=produits.find(x=>x.nom===p.item||x.igNom===p.item);
+    return s+(prodDef?.prix||0)*(p.quantite||0);
+  },0);
+  // Appliquer min/max du rang
+  const _uRangData=uRang;
+  let sal=Math.round(ca*.3)+prodBonus;
+  if(_uRangData?.salaireMin>0&&sal<_uRangData.salaireMin)sal=_uRangData.salaireMin;
+  if(_uRangData?.salaireMax>0&&sal>_uRangData.salaireMax)sal=_uRangData.salaireMax;
   const ms=weekSVC().filter(s=>s.employeNom===nom&&s.duree);
   const tm=ms.reduce((s,x)=>s+(x.duree||0),0);
   const allFac=weekFAC().filter(f=>f.emetteur===nom);
