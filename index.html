@@ -720,6 +720,14 @@ function renderSalaries(){
   }
   for(const f of facW){const n=f.emetteur||'Inconnu';if(!n||n==='Inconnu')continue;if(!empMap[n])empMap[n]={ca:0,nbFac:0,minSvc:0,bonusProd:0};if(f.status==='payee')empMap[n].ca+=f.montant||0;empMap[n].nbFac++;}
   for(const s of svcW){const n=s.employeNom||'';if(!n)continue;if(!empMap[n])empMap[n]={ca:0,nbFac:0,minSvc:0,bonusProd:0};empMap[n].minSvc+=s.duree||0;}
+  // Bonus production — inclut tous les employés même sans factures
+  for(const p of weekPROD()){
+    const n=p.nomJeu||'';if(!n)continue;
+    if(!empMap[n])empMap[n]={ca:0,nbFac:0,minSvc:0,bonusProd:0};
+    if(!empMap[n].bonusProd)empMap[n].bonusProd=0;
+    const prodDef=produits.find(x=>x.nom===p.item||x.igNom===p.item);
+    empMap[n].bonusProd+=(prodDef?.prix||0)*(p.quantite||0);
+  }
   const rows=Object.entries(empMap).sort((a,b)=>b[1].ca-a[1].ca);
   const getRang=nom=>{const u=USERS.find(u=>u.nomJeu===nom);const r=RANGS.find(r=>r.id===u?.rangId);return r?`<span class="bdg" style="background:${r.couleur||'#7c3aed'}22;color:${r.couleur||'#7c3aed'}">${r.nom}</span>`:'<span class="bdg bgr">—</span>';};
   const knownNames=USERS.map(u=>u.nomJeu?.toLowerCase()).filter(Boolean);
@@ -856,12 +864,12 @@ window.toggleProduction=async function(id, enable){
 
 window.openProduitProductionModal=function(p){
   const rangsOpts=RANGS.map(r=>`
-    <label class="ptog${(r.produitsIds||[]).includes(p.id)?' on':''}" id="prp_${r.id}" style="justify-content:space-between">
+    <label class="ptog${(r.produitsIds||[]).includes(p.id)?' on':''}" id="prp_${r.id}" style="justify-content:space-between;cursor:pointer" onclick="window.tprp('${r.id}',!document.getElementById('prp_${r.id}')?.classList.contains('on'))">
       <span style="display:flex;align-items:center;gap:.5rem">
         <span style="width:10px;height:10px;border-radius:50%;background:${r.couleur||'#7c3aed'};display:inline-block"></span>
         ${r.nom}
       </span>
-      <input type="checkbox"${(r.produitsIds||[]).includes(p.id)?' checked':''} onchange="window.tprp('${r.id}',this.checked)">
+      <div class="pd"></div>
     </label>`).join('');
   const html=`
     <div style="margin-bottom:1rem;padding:.75rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:8px">
@@ -882,7 +890,7 @@ window.openProduitProductionModal=function(p){
     await setDoc(doc(db,'produits',p.id),{prix,production:true},{merge:true});
     // Mettre à jour les rangs sélectionnés
     for(const r of RANGS){
-      const checked=document.getElementById('prp_'+r.id)?.querySelector('input')?.checked||false;
+      const checked=document.getElementById('prp_'+r.id)?.classList.contains('on')||false;
       const pids=r.produitsIds||[];
       const already=pids.includes(p.id);
       if(checked&&!already){
