@@ -917,7 +917,7 @@ document.getElementById('btn-mdp-save')?.addEventListener('click',async()=>{
 function renderImpots(){
   const facW=weekFAC();
   const txW=weekTX();
-  const nbEmp=USERS.filter(u=>u.role!=='admin'&&u.nomJeu).length||Object.keys(weekFAC().filter(f=>f.status==='payee'&&f.emetteur&&f.emetteur!=='Inconnu').reduce((m,f)=>{m[f.emetteur]=1;return m;},{})).length||1;
+  const nbEmp=USERS.length||Object.keys(weekFAC().filter(f=>f.status==='payee'&&f.emetteur&&f.emetteur!=='Inconnu').reduce((m,f)=>{m[f.emetteur]=1;return m;},{})).length||1;
 
   // Numéro de semaine courante
   const {start}=getWeekBounds(selectedWeekOffset);
