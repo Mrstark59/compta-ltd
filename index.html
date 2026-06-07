@@ -293,6 +293,15 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
           <div class="sc gd"><div class="sl">Essence</div><div class="sv" id="bs3">0$</div><div class="ss" id="bs3n"></div></div>
           <div class="sc p"><div class="sl">Factures</div><div class="sv" id="bs4">0</div><div class="ss" id="bs4n"></div></div>
         </div>
+        <div id="en-service-card" class="card" style="margin-bottom:1rem;border-color:rgba(20,184,166,.3)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+            <div class="ctitle" style="margin:0;color:var(--teal)">⏱️ En service actuellement</div>
+            <span id="en-service-count" class="bdg bt">0 actif</span>
+          </div>
+          <div id="en-service-list" style="display:flex;flex-wrap:wrap;gap:.5rem">
+            <span style="color:var(--muted);font-size:.82rem">Aucun employé en service</span>
+          </div>
+        </div>
         <div class="two-col">
           <div class="card"><div class="ctitle">Répartition entrées</div><div id="brep"><div class="loader"><span class="spin"></span>Chargement…</div></div></div>
           <div class="card"><div class="ctitle">Dernières transactions</div><div class="tw"><table><thead><tr><th>Date</th><th>Type</th><th>Montant</th><th>Catégorie</th><th>Personne</th></tr></thead><tbody id="brecent"></tbody></table></div></div>
@@ -556,7 +565,7 @@ function refreshAll(){
   updateWeekLabels();
   renderBilan();renderTX();renderStock();
   renderSalaries();renderFactures();renderProdRecap();
-  if(isAdmin)renderStations();
+  if(isAdmin){renderStations();renderEnService();}
   if(!isAdmin){renderVendorTableau();renderMyServices();renderMyProd();}
 }
 
@@ -663,6 +672,35 @@ const weekTX=()=>TX.filter(t=>inSelectedWeek(t.timestamp));
 const weekFAC=()=>FAC.filter(f=>inSelectedWeek(f.timestamp));
 const weekSVC=()=>SVC.filter(s=>inSelectedWeek(s.debut));
 const weekPROD=()=>PROD.filter(p=>inSelectedWeek(p.timestamp));
+
+// ════ EN SERVICE ════
+function renderEnService(){
+  const actifs=SVC.filter(s=>!s.fin&&s.employeNom);
+  const card=document.getElementById('en-service-card');
+  const list=document.getElementById('en-service-list');
+  const count=document.getElementById('en-service-count');
+  if(!card||!list||!count)return;
+
+  count.textContent=actifs.length+' actif'+(actifs.length>1?'s':'');
+  count.className='bdg '+(actifs.length>0?'bt':'bgr');
+
+  if(!actifs.length){
+    list.innerHTML='<span style="color:var(--muted);font-size:.82rem">Aucun employé en service</span>';
+    return;
+  }
+
+  list.innerHTML=actifs.map(s=>{
+    const debut=s.debut?.toDate?.();
+    const dureeMin=debut?Math.round((new Date()-debut)/60000):0;
+    const dureeStr=Math.floor(dureeMin/60)+'h'+String(dureeMin%60).padStart(2,'0');
+    return `<div style="display:flex;align-items:center;gap:.5rem;background:rgba(20,184,166,.08);border:1px solid rgba(20,184,166,.25);border-radius:8px;padding:.4rem .75rem">
+      <span style="width:8px;height:8px;background:var(--teal);border-radius:50%;display:inline-block;animation:pu 2s infinite"></span>
+      <span style="font-weight:700;font-size:.85rem">${s.employeNom}</span>
+      <span style="font-size:.75rem;color:var(--muted)">${debut?fmtD(s.debut):'—'}</span>
+      <span style="font-size:.75rem;color:var(--teal);font-family:Rajdhani,sans-serif;font-weight:700">${dureeStr}</span>
+    </div>`;
+  }).join('');
+}
 
 // ════ BILAN ════
 function renderBilan(){
@@ -1192,6 +1230,9 @@ document.getElementById('btn-mdp-save')?.addEventListener('click', async()=>{
     msg.textContent=e.code==='auth/wrong-password'?'Mot de passe actuel incorrect.':'Erreur : '+e.message;
   }
 });
+
+// ════ AUTO-REFRESH SERVICE EN COURS (toutes les minutes) ════
+setInterval(()=>{ if(uProf?.role==='admin') renderEnService(); }, 60000);
 
 // ════ MODAL ════
 function showModal(title,content,onSave){$('mtitle').textContent=title;$('mcontent').innerHTML=content;$('msave').onclick=onSave;$('modal-overlay').classList.add('open');}
