@@ -474,6 +474,73 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
         </div>
       </section>
 
+
+      <!-- IMPOTS (admin) -->
+      <section id="tab-impots" class="tab">
+        <div class="ptitle">Déclaration Fiscale</div>
+        <div class="psub" id="imp-week-lbl">Calcul automatique — saisie manuelle requise pour certains postes</div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+
+          <!-- REVENUS -->
+          <div class="card" style="border-color:rgba(16,185,129,.3)">
+            <div class="ctitle" style="color:var(--green)">📈 Revenus</div>
+            <div class="rr"><div class="rl">Chiffre d'affaires</div><div class="rv" id="imp-ca" style="color:var(--green)">—</div></div>
+          </div>
+
+          <!-- RECAP FISCAL -->
+          <div class="card" style="border-color:rgba(245,158,11,.3);grid-row:span 2">
+            <div class="ctitle" style="color:var(--gold)">📊 Récapitulatif</div>
+            <div style="display:flex;flex-direction:column;gap:.5rem">
+              <div class="rr"><div class="rl" style="width:180px">CA</div><div class="rv" id="rec-ca" style="color:var(--green)">—</div></div>
+              <div class="rr"><div class="rl" style="width:180px">Total déductibles</div><div class="rv" id="rec-ded" style="color:var(--red)">—</div></div>
+              <div class="rr"><div class="rl" style="width:180px">Non déductibles</div><div class="rv" id="rec-nded" style="color:var(--red)">—</div></div>
+              <div style="border-top:1px solid var(--border);margin:.25rem 0"></div>
+              <div class="rr"><div class="rl" style="width:180px">Bénéfice brut</div><div class="rv" id="rec-ben" style="color:var(--pl)">—</div></div>
+              <div class="rr"><div class="rl" style="width:180px">Bénéfice imposable</div><div class="rv" id="rec-benimp" style="color:var(--pl)">—</div></div>
+              <div id="rec-tranche-row" class="rr" style="display:none"><div class="rl" style="width:180px;color:var(--gold)">Tranche (CA&gt;500k = 46%)</div><div class="rv" style="color:var(--gold)">46%</div></div>
+              <div style="border-top:1px solid var(--border);margin:.25rem 0"></div>
+              <div class="rr"><div class="rl" style="width:180px;font-weight:700;color:var(--red)">Impots a verser</div><div class="rv" id="rec-impots" style="color:var(--red);font-size:1.1rem">—</div></div>
+              <div class="rr"><div class="rl" style="width:180px;font-weight:700;color:var(--green)">Resultat net</div><div class="rv" id="rec-net" style="color:var(--green);font-size:1.1rem">—</div></div>
+            </div>
+          </div>
+
+          <!-- DEDUCTIBLES -->
+          <div class="card" style="border-color:rgba(239,68,68,.25)">
+            <div class="ctitle" style="color:var(--red)">Deductibles</div>
+            <div class="rr"><div class="rl">Salaires employes</div><div class="rv" id="imp-sal" style="color:var(--red)">—</div></div>
+            <div class="rr"><div class="rl">Prime hebdo calculee</div><div style="flex:1"><div class="rv" id="imp-prime-calc" style="color:var(--red)">—</div><div id="imp-prime-detail" style="font-size:.7rem;color:var(--muted)"></div></div></div>
+            <div class="rr"><div class="rl">Prime hebdo (screen)</div><div style="flex:1"><input id="imp-prime-screen" type="number" min="0" class="corr-inp" placeholder="0" style="width:100%;text-align:right" oninput="calcImpots()"/></div></div>
+            <div style="border-top:1px solid var(--border);margin:.4rem 0;font-size:.68rem;color:var(--muted);text-transform:uppercase;padding-top:.4rem">Matieres premieres</div>
+            <div class="rr"><div class="rl">Depenses brutes</div><div class="rv" id="imp-dep-brut" style="color:var(--red)">—</div></div>
+            <div class="rr"><div class="rl" style="padding-left:.75rem;font-size:.75rem">Nourriture</div><div class="rv" id="imp-nourr" style="color:var(--muted);font-size:.78rem">—</div></div>
+            <div class="rr"><div class="rl" style="padding-left:.75rem;font-size:.75rem">Locations</div><div class="rv" style="color:var(--muted);font-size:.78rem">12 950$</div></div>
+            <div class="rr"><div class="rl" style="padding-left:.75rem;font-size:.75rem">Frais vehicule</div><div style="flex:1"><input id="imp-frais-veh" type="number" min="0" class="corr-inp" placeholder="0" style="width:100%;text-align:right" oninput="calcImpots()"/></div></div>
+            <div class="rr"><div class="rl" style="padding-left:.75rem;font-size:.75rem">Achats vehicules</div><div style="flex:1"><input id="imp-achats-veh" type="number" min="0" class="corr-inp" placeholder="0" style="width:100%;text-align:right" oninput="calcImpots()"/></div></div>
+            <div class="rr"><div class="rl" style="font-weight:600">Mat. premieres nettes</div><div class="rv" id="imp-mp-net" style="color:var(--red)">—</div></div>
+            <div style="border-top:1px solid var(--border);margin:.4rem 0"></div>
+            <div class="rr"><div class="rl" style="font-weight:700">Non deductible</div><div style="flex:1"><input id="imp-non-ded" type="number" min="0" class="corr-inp" placeholder="0" style="width:100%;text-align:right" oninput="calcImpots()"/></div></div>
+          </div>
+        </div>
+
+        <!-- PRIME MENSUELLE -->
+        <div class="card" style="border-color:rgba(124,58,237,.3)">
+          <div class="ctitle" style="color:var(--pl)">Prime Mensuelle (4 semaines)</div>
+          <div class="psub" style="margin-bottom:1rem">Valable a partir de la S18 si benefice net cumule positif sur 4 semaines</div>
+          <div style="display:flex;gap:1.5rem;align-items:flex-end;flex-wrap:wrap">
+            <div>
+              <div class="prod-lbl">Benefice net cumule (4 semaines)</div>
+              <input id="imp-ben-cumul" type="number" min="0" class="inp" placeholder="0" oninput="calcPrimeMensuelle()" style="width:200px"/>
+            </div>
+            <div>
+              <div style="font-size:.78rem;color:var(--muted);margin-bottom:.3rem">Prime max calculee</div>
+              <div id="prime-mensuelle-val" style="font-family:Rajdhani,sans-serif;font-size:1.8rem;font-weight:700;color:var(--pl)">—</div>
+              <div id="prime-mensuelle-tranche" style="font-size:.75rem;color:var(--muted)"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 </div>
