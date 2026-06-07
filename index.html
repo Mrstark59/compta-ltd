@@ -757,8 +757,94 @@ function renderProdRecap(){
 function renderProduits(){
   const grid=document.getElementById('produits-grid');if(!grid)return;
   if(!produits.length){grid.innerHTML='<div class="empty"><div class="ei">🏷️</div>Aucun produit créé</div>';return;}
-  grid.innerHTML=produits.map(p=>`<div class="card" style="position:relative"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem"><div style="font-family:Rajdhani,sans-serif;font-size:1rem;font-weight:700">${p.nom}</div><div style="display:flex;gap:.4rem"><button class="btn-s" style="font-size:.72rem;padding:.3rem .6rem" onclick="window.editProduit(this)" data-id="${p.id}">✏️</button><button class="btn-d" style="font-size:.72rem;padding:.3rem .6rem" onclick="window.delProduit(this)" data-id="${p.id}" data-nom="${p.nom}">🗑️</button></div></div><div style="font-size:.78rem;color:var(--muted)">Prix unitaire</div><div style="font-family:Rajdhani,sans-serif;font-size:1.4rem;font-weight:700;color:var(--teal)">${p.prix>0?fmt(p.prix):'—'}</div><div style="margin-top:.5rem"><span class="bdg ${p.showInStock===false?'br':'bg'}">${p.showInStock===false?'🚫 Masqué du stock':'✅ Visible dans stock'}</span></div></div>`).join('');
+  grid.innerHTML=produits.map(p=>{
+    const rangsDispo=RANGS.filter(r=>(r.produitsIds||[]).includes(p.id));
+    const rangsLabels=rangsDispo.map(r=>`<span class="bdg" style="background:${r.couleur||'#7c3aed'}22;color:${r.couleur||'#7c3aed'}">${r.nom}</span>`).join(' ');
+    const prodActif=p.production===true;
+    return`<div class="card" style="position:relative;${prodActif?'border-color:rgba(16,185,129,.35)':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem">
+        <div style="font-family:Rajdhani,sans-serif;font-size:1rem;font-weight:700">${p.nom}</div>
+        <div style="display:flex;gap:.4rem">
+          <button class="btn-s" style="font-size:.72rem;padding:.3rem .6rem" onclick="window.editProduit(this)" data-id="${p.id}">✏️</button>
+          <button class="btn-d" style="font-size:.72rem;padding:.3rem .6rem" onclick="window.delProduit(this)" data-id="${p.id}" data-nom="${p.nom}">🗑️</button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">
+        <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;user-select:none" onclick="window.toggleProduction('${p.id}',${!prodActif})">
+          <div style="width:34px;height:18px;border-radius:9px;background:${prodActif?'var(--green)':'rgba(255,255,255,.1)'};position:relative;transition:background .2s;flex-shrink:0">
+            <div style="width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:2px;left:${prodActif?'18px':'2px'};transition:left .2s"></div>
+          </div>
+          <span style="font-size:.75rem;color:${prodActif?'var(--green)':'var(--muted)'};font-weight:700">Production</span>
+        </label>
+        ${prodActif&&p.prix>0?`<span style="font-family:Rajdhani,sans-serif;font-size:1.1rem;font-weight:700;color:var(--teal)">${fmt(p.prix)}/u</span>`:''}
+      </div>
+      ${prodActif&&rangsDispo.length?`<div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.5rem">${rangsLabels}</div>`:''}
+      ${prodActif&&!rangsDispo.length?`<div style="font-size:.72rem;color:var(--red);margin-bottom:.5rem">⚠️ Aucun rang assigné</div>`:''}
+      <div style="margin-top:.25rem"><span class="bdg ${p.showInStock===false?'br':'bg'}">${p.showInStock===false?'🚫 Masqué stock':'✅ Stock visible'}</span></div>
+    </div>`;
+  }).join('');
 }
+
+window.toggleProduction=async function(id, enable){
+  const p=produits.find(x=>x.id===id);
+  if(!p)return;
+  if(enable){
+    // Ouvrir modal de config production
+    openProduitProductionModal(p);
+  } else {
+    // Désactiver production
+    await setDoc(doc(db,'produits',id),{production:false},{merge:true});
+    // Retirer ce produit de tous les rangs
+    for(const r of RANGS){
+      const pids=(r.produitsIds||[]).filter(pid=>pid!==id);
+      if(pids.length!==(r.produitsIds||[]).length){
+        await setDoc(doc(db,'rangs',r.id),{produitsIds:pids},{merge:true});
+      }
+    }
+  }
+};
+
+window.openProduitProductionModal=function(p){
+  const rangsOpts=RANGS.map(r=>`
+    <label class="ptog${(r.produitsIds||[]).includes(p.id)?' on':''}" id="prp_${r.id}" style="justify-content:space-between">
+      <span style="display:flex;align-items:center;gap:.5rem">
+        <span style="width:10px;height:10px;border-radius:50%;background:${r.couleur||'#7c3aed'};display:inline-block"></span>
+        ${r.nom}
+      </span>
+      <input type="checkbox"${(r.produitsIds||[]).includes(p.id)?' checked':''} onchange="window.tprp('${r.id}',this.checked)">
+    </label>`).join('');
+  const html=`
+    <div style="margin-bottom:1rem;padding:.75rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:8px">
+      <div style="font-size:.72rem;color:var(--green);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:.4rem">💰 Bonus par unité déclarée</div>
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <input id="pprod-prix" type="number" min="0" class="inp" value="${p.prix||0}" placeholder="0" style="width:120px"/>
+        <span style="font-size:.82rem;color:var(--muted)">$ par unité déclarée</span>
+      </div>
+      <div style="font-size:.72rem;color:var(--muted);margin-top:.4rem">Ajouté au salaire de l'employé à chaque déclaration</div>
+    </div>
+    <div class="mf">
+      <label class="ml">Rangs autorisés à déclarer</label>
+      ${rangsOpts.length?`<div style="display:flex;flex-direction:column;gap:.4rem;margin-top:.25rem">${rangsOpts}</div>`:'<p style="color:var(--muted);font-size:.82rem">Aucun rang créé</p>'}
+    </div>`;
+  showModal(`Production — ${p.nom}`,html,async()=>{
+    const prix=parseInt(document.getElementById('pprod-prix')?.value)||0;
+    // Sauvegarder prix et activer production sur le produit
+    await setDoc(doc(db,'produits',p.id),{prix,production:true},{merge:true});
+    // Mettre à jour les rangs sélectionnés
+    for(const r of RANGS){
+      const checked=document.getElementById('prp_'+r.id)?.querySelector('input')?.checked||false;
+      const pids=r.produitsIds||[];
+      const already=pids.includes(p.id);
+      if(checked&&!already){
+        await setDoc(doc(db,'rangs',r.id),{produitsIds:[...pids,p.id]},{merge:true});
+      } else if(!checked&&already){
+        await setDoc(doc(db,'rangs',r.id),{produitsIds:pids.filter(x=>x!==p.id)},{merge:true});
+      }
+    }
+    hideModal();
+  });
+  window.tprp=(id,checked)=>{const el=document.getElementById('prp_'+id);if(el)el.classList.toggle('on',checked);};
+};
 (function(){const b=document.getElementById('btn-cp');if(b)b.addEventListener('click',()=>openProduitModal(null));})();
 window.editProduit=btn=>{const p=produits.find(x=>x.id===btn.dataset.id);if(p)openProduitModal(p);};
 window.delProduit=btn=>{showModal(`Supprimer "${btn.dataset.nom}" ?`,'<p style="color:var(--muted);font-size:.9rem">Ce produit sera retiré de tous les rangs.</p>',async()=>{await deleteDoc(doc(db,'produits',btn.dataset.id));hideModal();});};
