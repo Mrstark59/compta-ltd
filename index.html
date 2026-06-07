@@ -1017,28 +1017,24 @@ window.calcImpots=function(){
   const autresNded=parseInt(el('imp-autres-nded')?.value)||0;
   const totalNded=locNded+vehNded+autresNded;
 
-  // Impôt progressif par tranches sur bénéfice imposable
+  // Impôt : taux flat de la tranche atteinte sur tout le bénéfice imposable
   const TRANCHES=[
-    {min:1,max:10000,taux:0},
-    {min:10001,max:50000,taux:0.10},
-    {min:50001,max:100000,taux:0.19},
-    {min:100001,max:250000,taux:0.28},
-    {min:250001,max:500000,taux:0.36},
-    {min:500001,max:Infinity,taux:0.46}
+    {label:'T0 (0%)',min:0,max:10000,taux:0},
+    {label:'T1 (10%)',min:10001,max:50000,taux:0.10},
+    {label:'T2 (19%)',min:50001,max:100000,taux:0.19},
+    {label:'T3 (28%)',min:100001,max:250000,taux:0.28},
+    {label:'T4 (36%)',min:250001,max:500000,taux:0.36},
+    {label:'T5 (46%)',min:500001,max:Infinity,taux:0.46}
   ];
-  let impots=0;
-  let tranchesHtml='';
   const base=Math.max(0,benImp);
-  for(const t of TRANCHES){
-    if(base<=t.min-1)break;
-    const portion=Math.min(base,t.max===Infinity?base:t.max)-(t.min-1);
-    const montant=Math.round(portion*t.taux);
-    if(montant>0||base>=t.min){
-      impots+=montant;
-      tranchesHtml+=`<div style="display:flex;justify-content:space-between;padding:.15rem 0;border-bottom:1px solid rgba(120,75,220,.07)"><span style="color:${montant>0?'var(--text)':'var(--dim)'}">${t.taux===0?'T0 (0%)':t.max===Infinity?'T5 (46%)':'T'+(TRANCHES.indexOf(t))+' ('+Math.round(t.taux*100)+'%)'}</span><span style="font-family:Rajdhani,sans-serif;font-weight:700;color:${montant>0?'var(--red)':'var(--dim)'}">${montant>0?f(montant):'—'}</span></div>`;
-    }
-  }
-  if(!tranchesHtml)tranchesHtml='<span style="color:var(--muted)">Bénéfice nul ou négatif</span>';
+  let tauxApplique=0,trancheLabel='T0 (0%)';
+  for(const t of TRANCHES){if(base>=t.min){tauxApplique=t.taux;trancheLabel=t.label;}}
+  const impots=Math.round(base*tauxApplique);
+  let tranchesHtml=TRANCHES.map(t=>{
+    const active=t.label===trancheLabel;
+    return`<div style="display:flex;justify-content:space-between;padding:.2rem .4rem;border-bottom:1px solid rgba(120,75,220,.07);${active?'background:rgba(239,68,68,.1);border-radius:4px;':''}"><span style="color:${active?'var(--text)':'var(--dim)'}">${t.label}${active?' ◀':''}</span><span style="font-family:Rajdhani,sans-serif;font-weight:700;color:${active?'var(--red)':'var(--dim)'}">${active&&impots>0?f(impots):'—'}</span></div>`;
+  }).join('');
+  if(base<=0)tranchesHtml='<span style="color:var(--muted)">Bénéfice nul ou négatif</span>';
 
   // Net après impôt
   const netApresImpots=benImp-impots-totalNded;
