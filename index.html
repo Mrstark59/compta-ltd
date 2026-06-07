@@ -713,8 +713,13 @@ function renderStock(){
 
 function renderSalaries(){
   const facW=weekFAC(),svcW=weekSVC(),empMap={};
-  for(const f of facW){const n=f.emetteur||'Inconnu';if(!n||n==='Inconnu')continue;if(!empMap[n])empMap[n]={ca:0,nbFac:0,minSvc:0};if(f.status==='payee')empMap[n].ca+=f.montant||0;empMap[n].nbFac++;}
-  for(const s of svcW){const n=s.employeNom||'';if(!empMap[n])empMap[n]={ca:0,nbFac:0,minSvc:0};empMap[n].minSvc+=s.duree||0;}
+  // Initialiser tous les comptes utilisateurs
+  for(const u of USERS){
+    if(u.role==='admin'||!u.nomJeu)continue;
+    if(!empMap[u.nomJeu])empMap[u.nomJeu]={ca:0,nbFac:0,minSvc:0,bonusProd:0};
+  }
+  for(const f of facW){const n=f.emetteur||'Inconnu';if(!n||n==='Inconnu')continue;if(!empMap[n])empMap[n]={ca:0,nbFac:0,minSvc:0,bonusProd:0};if(f.status==='payee')empMap[n].ca+=f.montant||0;empMap[n].nbFac++;}
+  for(const s of svcW){const n=s.employeNom||'';if(!n)continue;if(!empMap[n])empMap[n]={ca:0,nbFac:0,minSvc:0,bonusProd:0};empMap[n].minSvc+=s.duree||0;}
   const rows=Object.entries(empMap).sort((a,b)=>b[1].ca-a[1].ca);
   const getRang=nom=>{const u=USERS.find(u=>u.nomJeu===nom);const r=RANGS.find(r=>r.id===u?.rangId);return r?`<span class="bdg" style="background:${r.couleur||'#7c3aed'}22;color:${r.couleur||'#7c3aed'}">${r.nom}</span>`:'<span class="bdg bgr">—</span>';};
   const knownNames=USERS.map(u=>u.nomJeu?.toLowerCase()).filter(Boolean);
