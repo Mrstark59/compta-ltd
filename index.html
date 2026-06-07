@@ -918,8 +918,6 @@ document.getElementById('btn-mdp-save')?.addEventListener('click',async()=>{
 function renderImpots(){
   const facW=weekFAC();
   const txW=weekTX();
-  const nbEmp=parseInt(document.getElementById('imp-nb-emp')?.value)||USERS.length||1;
-
   // Numéro de semaine courante
   const {start}=getWeekBounds(selectedWeekOffset);
   const numSem=getISOWeek(start);
@@ -968,21 +966,25 @@ function renderImpots(){
   if(el('imp-ca'))el('imp-ca').textContent=f(ca);
   if(el('imp-sal'))el('imp-sal').textContent=f(salTotal);
   if(el('imp-dep-brut'))el('imp-dep-brut').textContent=f(depBrut);
-  if(el('imp-nourr'))el('imp-nourr').textContent=f(nourr)+' ('+nbEmp+' × 750$)';
 
-  // Calcul prime hebdo auto
-  const primeParPers=Math.round(ca*0.005);
-  const nbBenef=Math.ceil(nbEmp*0.3);
-  const primeCalcAuto=primeParPers*nbBenef;
-  if(el('imp-prime-detail'))el('imp-prime-detail').textContent=
-    f(ca)+' × 0.5% = '+f(primeParPers)+'/emp × ⌈'+nbEmp+' × 30%⌉ = '+nbBenef+' emp → auto : '+f(primeCalcAuto);
-
+  window._imp={ca,salTotal,depBrut,isPrimeSem};
   calcImpots();
 }
 
 window.calcImpots=function(){
   if(!window._imp)return;
-  const {ca,salTotal,depBrut,nourr,isPrimeSem}=window._imp;
+  const {ca,salTotal,depBrut,isPrimeSem}=window._imp;
+  const nbEmp=parseInt(document.getElementById('imp-nb-emp')?.value)||USERS.length||1;
+  const nourr=750*nbEmp;
+  // Update nourriture display
+  const _nEl=document.getElementById('imp-nourr');
+  if(_nEl)_nEl.textContent=Number(nourr).toLocaleString('fr-FR')+'$ ('+nbEmp+' × 750$)';
+  // Update prime hebdo detail
+  const primeParPers=Math.round(ca*0.005);
+  const nbBenef=Math.ceil(nbEmp*0.3);
+  const primeCalcAuto=primeParPers*nbBenef;
+  const _pdEl=document.getElementById('imp-prime-detail');
+  if(_pdEl)_pdEl.textContent=Number(ca).toLocaleString('fr-FR')+'$ × 0.5% = '+Number(primeParPers).toLocaleString('fr-FR')+'$/emp × ⌈'+nbEmp+' × 30%⌉ = '+nbBenef+' emp → auto : '+Number(primeCalcAuto).toLocaleString('fr-FR')+'$';
   const f=v=>Number(Math.round(v)).toLocaleString('fr-FR')+'$';
   const el=id=>document.getElementById(id);
 
