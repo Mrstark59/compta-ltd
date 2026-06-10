@@ -167,7 +167,6 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
     </div>
   </div>
 </div>
-
 <!-- APP -->
 <div id="app" style="display:none;flex-direction:column">
   <div class="topbar">
@@ -190,6 +189,7 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
         <div class="nav-sec">Comptabilité</div>
         <button class="nb active" data-tab="bilan">📊 Bilan</button>
         <button class="nb" data-tab="transactions">💰 Transactions</button>
+        <button class="nb" data-tab="depenses">💸 Dépenses</button>
         <button class="nb" data-tab="stock">📦 Stock</button>
         <div class="nav-sec">Employés</div>
         <button class="nb" data-tab="salaries">👥 Salariés</button>
@@ -253,10 +253,24 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
         <div class="ptitle">Transactions</div><div class="psub" id="tx-week-lbl"></div>
         <div class="fb">
           <select id="ftt" class="fs"><option value="">Tous types</option><option value="entree">Entrées</option><option value="sortie">Sorties</option></select>
-          <select id="ftc" class="fs"><option value="">Toutes catégories</option><option value="vente_client">Vente client</option><option value="essence">Essence</option><option value="depense_facture">Dépense facture</option><option value="salaire">Salaire</option><option value="autre">Autre</option></select>
+          <select id="ftc" class="fs"><option value="">Toutes catégories</option><option value="vente_client">Vente client</option><option value="essence">Essence</option><option value="approvisionnement">Approvisionnement</option><option value="salaire">Salaire</option><option value="loyer">Loyer</option><option value="autre">Autre</option></select>
           <input type="text" id="fts" class="fi" placeholder="🔍  Rechercher…"/>
         </div>
-        <div class="card"><div class="tw"><table><thead><tr><th>Date</th><th>Type</th><th>Montant</th><th>Catégorie</th><th>Personne</th><th>Raison</th><th>Solde après</th></tr></thead><tbody id="txb"></tbody></table></div><div id="txc" style="margin-top:.75rem;font-size:.75rem;color:var(--muted)"></div></div>
+        <div class="card"><div class="tw"><table><thead><tr><th>Date</th><th>Type</th><th>Montant</th><th>Catégorie</th><th>Personne</th><th>Raison</th><th>Solde après</th><th></th></tr></thead><tbody id="txb"></tbody></table></div><div id="txc" style="margin-top:.75rem;font-size:.75rem;color:var(--muted)"></div></div>
+      </section>
+
+      <!-- DÉPENSES -->
+      <section id="tab-depenses" class="tab">
+        <div class="ptitle">Dépenses</div><div class="psub" id="dep-week-lbl"></div>
+        <div class="srow" id="dep-stats"></div>
+        <div class="fb">
+          <select id="fdep-cat" class="fs"><option value="">Toutes catégories</option><option value="approvisionnement">Approvisionnement</option><option value="salaire">Salaire</option><option value="loyer">Loyer</option><option value="autre">Autre</option></select>
+          <input type="text" id="fdep-s" class="fi" placeholder="🔍 Rechercher…"/>
+        </div>
+        <div class="card"><div class="tw"><table>
+          <thead><tr><th>Date</th><th>Montant</th><th>Catégorie</th><th>Personne</th><th>Raison</th><th></th></tr></thead>
+          <tbody id="dep-body"></tbody>
+        </table></div><div id="dep-total" style="margin-top:.75rem;font-size:.8rem;color:var(--muted);text-align:right"></div></div>
       </section>
 
       <!-- STOCK -->
@@ -392,22 +406,17 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
         </div>
       </section>
 
-      <!-- IMPOTS (admin) -->
+      <!-- IMPOTS -->
       <section id="tab-impots" class="tab">
         <div class="ptitle">Déclaration Fiscale</div>
         <div class="psub" id="imp-week-lbl">Calcul automatique — saisie manuelle requise pour certains postes</div>
-
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
-
-          <!-- REVENUS -->
           <div class="card" style="border-color:rgba(16,185,129,.3)">
             <div class="ctitle" style="color:var(--green)">📈 Revenus</div>
             <div class="rr"><div class="rl">Chiffre d'affaires</div><div class="rv" id="imp-ca" style="color:var(--green)">—</div></div>
             <div class="rr"><div class="rl">Nombre d'employés</div><div style="flex:1;display:flex;align-items:center;gap:.5rem;justify-content:flex-end"><input id="imp-nb-emp" type="number" min="1" class="corr-inp" placeholder="0" style="width:80px;text-align:right" oninput="calcImpots()"/><span style="font-size:.72rem;color:var(--muted)">salariés</span></div></div>
             <div class="rr"><div class="rl" style="font-size:.75rem;color:var(--muted)">Autres revenus</div><input id="imp-autres-rev" type="number" min="0" class="corr-inp" placeholder="0" style="width:110px;text-align:right;margin-left:auto" oninput="calcImpots()"/></div>
           </div>
-
-          <!-- RECAP FISCAL -->
           <div class="card" style="border-color:rgba(245,158,11,.3);grid-row:span 2">
             <div class="ctitle" style="color:var(--gold)">📊 Récapitulatif</div>
             <div style="display:flex;flex-direction:column;gap:.5rem">
@@ -416,7 +425,6 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
               <div style="border-top:1px solid var(--border);margin:.25rem 0"></div>
               <div class="rr"><div class="rl" style="width:190px">Base imposable</div><div class="rv" id="rec-benimp" style="color:var(--pl)">—</div></div>
               <div style="border-top:1px solid var(--border);margin:.25rem 0"></div>
-              <!-- Tranches -->
               <div style="font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:.2rem">Calcul impôt par tranches</div>
               <div id="rec-tranches" style="font-size:.78rem;color:var(--muted)">—</div>
               <div style="border-top:1px solid var(--border);margin:.25rem 0"></div>
@@ -426,8 +434,6 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
               <div class="rr"><div class="rl" style="width:190px;font-weight:700;color:var(--green)">Net après impôt</div><div class="rv" id="rec-net" style="color:var(--green);font-size:1.1rem">—</div></div>
             </div>
           </div>
-
-          <!-- DEDUCTIBLES -->
           <div class="card" style="border-color:rgba(239,68,68,.25)">
             <div class="ctitle" style="color:var(--red)">➖ Charges déductibles</div>
             <div class="rr"><div class="rl">Salaires employés</div><div class="rv" id="imp-sal" style="color:var(--red)">—</div></div>
@@ -443,27 +449,14 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
             <div class="rr"><div class="rl" style="padding-left:.75rem;font-size:.75rem;color:var(--muted)">Dons versés</div><div style="flex:1"><input id="imp-dons" type="number" min="0" class="corr-inp" placeholder="0" style="width:100%;text-align:right" oninput="calcImpots()"/></div></div>
           </div>
         </div>
-
-        <!-- NON DEDUCTIBLES -->
         <div class="card" style="border-color:rgba(239,68,68,.15);margin-bottom:1rem">
           <div class="ctitle" style="color:var(--red)">✖ Charges non déductibles</div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem">
-            <div>
-              <div style="font-size:.72rem;color:var(--muted);margin-bottom:.3rem">Locations non déd.</div>
-              <input id="imp-loc-nded" type="number" min="0" class="corr-inp" placeholder="0" style="width:100%;text-align:right" oninput="calcImpots()"/>
-            </div>
-            <div>
-              <div style="font-size:.72rem;color:var(--muted);margin-bottom:.3rem">Achats véhicules non déd.</div>
-              <input id="imp-veh-nded" type="number" min="0" class="corr-inp" placeholder="0" style="width:100%;text-align:right" oninput="calcImpots()"/>
-            </div>
-            <div>
-              <div style="font-size:.72rem;color:var(--muted);margin-bottom:.3rem">Autres non déductibles</div>
-              <input id="imp-autres-nded" type="number" min="0" class="corr-inp" placeholder="0" style="width:100%;text-align:right" oninput="calcImpots()"/>
-            </div>
+            <div><div style="font-size:.72rem;color:var(--muted);margin-bottom:.3rem">Locations non déd.</div><input id="imp-loc-nded" type="number" min="0" class="corr-inp" placeholder="0" style="width:100%;text-align:right" oninput="calcImpots()"/></div>
+            <div><div style="font-size:.72rem;color:var(--muted);margin-bottom:.3rem">Achats véhicules non déd.</div><input id="imp-veh-nded" type="number" min="0" class="corr-inp" placeholder="0" style="width:100%;text-align:right" oninput="calcImpots()"/></div>
+            <div><div style="font-size:.72rem;color:var(--muted);margin-bottom:.3rem">Autres non déductibles</div><input id="imp-autres-nded" type="number" min="0" class="corr-inp" placeholder="0" style="width:100%;text-align:right" oninput="calcImpots()"/></div>
           </div>
         </div>
-
-        <!-- PRIME MENSUELLE -->
         <div class="card" id="prime-mens-card" style="border-color:rgba(124,58,237,.3);display:none">
           <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
             <div class="ctitle" style="color:var(--pl);margin:0">🎁 Prime Mensuelle (4 semaines)</div>
@@ -486,7 +479,6 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
           <div class="ctitle" style="color:var(--muted)">🎁 Prime Mensuelle</div>
           <div style="font-size:.82rem;color:var(--muted)" id="prime-mens-next-lbl">Non applicable cette semaine</div>
         </div>
-
       </section>
 
     </main>
@@ -516,51 +508,22 @@ let aUser=null,uProf=null,uRang=null;
 let TX=[],FAC=[],STK=[],SVC=[],PROD=[],RANGS=[],USERS=[],produits=[],STATIONS=[],unsubs=[];
 let selectedWeekOffset=0;
 
-function getWeekBounds(offset=0){
-  const now=new Date(),day=now.getDay(),toMon=day===0?-6:1-day;
-  const mon=new Date(now);mon.setDate(now.getDate()+toMon+offset*7);mon.setHours(0,0,0,0);
-  const sun=new Date(mon);sun.setDate(mon.getDate()+6);sun.setHours(23,59,59,999);
-  return{start:mon,end:sun};
-}
-function getISOWeek(d){
-  const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
-  const day=dt.getUTCDay()||7;dt.setUTCDate(dt.getUTCDate()+4-day);
-  const y1=new Date(Date.UTC(dt.getUTCFullYear(),0,1));
-  return Math.ceil((((dt-y1)/86400000)+1)/7);
-}
-function weekLabel(offset=0){
-  const{start,end}=getWeekBounds(offset);
-  const w=getISOWeek(start);
-  const fmt=d=>d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
-  return`S${w} — ${fmt(start)} au ${fmt(end)}`;
-}
-function buildWeekSelector(){
-  const sel=document.getElementById('week-sel');sel.innerHTML='';
-  for(let i=0;i>=-1;i--){
-    const opt=document.createElement('option');opt.value=i;
-    opt.textContent=weekLabel(i)+(i===0?' (en cours)':'');sel.appendChild(opt);
-  }
-  sel.value=0;
-}
-function inSelectedWeek(ts){
-  if(!ts)return false;
-  try{const d=ts.toDate?ts.toDate():new Date(ts);const{start,end}=getWeekBounds(selectedWeekOffset);return d>=start&&d<=end;}
-  catch{return false;}
-}
-document.getElementById('week-sel').addEventListener('change',e=>{
-  selectedWeekOffset=parseInt(e.target.value);
-  document.getElementById('week-current-badge').style.display=selectedWeekOffset===0?'inline':'none';
-  refreshAll();
-});
+function getWeekBounds(offset=0){const now=new Date(),day=now.getDay(),toMon=day===0?-6:1-day;const mon=new Date(now);mon.setDate(now.getDate()+toMon+offset*7);mon.setHours(0,0,0,0);const sun=new Date(mon);sun.setDate(mon.getDate()+6);sun.setHours(23,59,59,999);return{start:mon,end:sun};}
+function getISOWeek(d){const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const day=dt.getUTCDay()||7;dt.setUTCDate(dt.getUTCDate()+4-day);const y1=new Date(Date.UTC(dt.getUTCFullYear(),0,1));return Math.ceil((((dt-y1)/86400000)+1)/7);}
+function weekLabel(offset=0){const{start,end}=getWeekBounds(offset);const w=getISOWeek(start);const fmt=d=>d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});return`S${w} — ${fmt(start)} au ${fmt(end)}`;}
+function buildWeekSelector(){const sel=document.getElementById('week-sel');sel.innerHTML='';for(let i=0;i>=-1;i--){const opt=document.createElement('option');opt.value=i;opt.textContent=weekLabel(i)+(i===0?' (en cours)':'');sel.appendChild(opt);}sel.value=0;}
+function inSelectedWeek(ts){if(!ts)return false;try{const d=ts.toDate?ts.toDate():new Date(ts);const{start,end}=getWeekBounds(selectedWeekOffset);return d>=start&&d<=end;}catch{return false;}}
+document.getElementById('week-sel').addEventListener('change',e=>{selectedWeekOffset=parseInt(e.target.value);document.getElementById('week-current-badge').style.display=selectedWeekOffset===0?'inline':'none';refreshAll();});
+
 function refreshAll(){
   const isAdmin=uProf?.role==='admin';
-  updateWeekLabels();renderBilan();renderTX();renderStock();renderSalaries();renderFactures();renderProdRecap();
+  updateWeekLabels();renderBilan();renderTX();renderDepenses();renderStock();renderSalaries();renderFactures();renderProdRecap();
   if(isAdmin){renderStations();renderEnService();renderImpots();}
   if(!isAdmin){renderVendorTableau();renderMyServices();renderMyProd();}
 }
 function updateWeekLabels(){
   const lbl=weekLabel(selectedWeekOffset);
-  ['b-week-lbl','tx-week-lbl','sal-week-lbl','fac-week-lbl','pr-week-lbl','vt-week-lbl','mp-week-lbl','svc-week-lbl','sta-week-lbl','imp-week-lbl'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=lbl;});
+  ['b-week-lbl','tx-week-lbl','dep-week-lbl','sal-week-lbl','fac-week-lbl','pr-week-lbl','vt-week-lbl','mp-week-lbl','svc-week-lbl','sta-week-lbl','imp-week-lbl'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=lbl;});
 }
 onAuthStateChanged(auth,async u=>{
   if(u){aUser=u;await loadProf(u.uid);
@@ -574,16 +537,8 @@ onAuthStateChanged(auth,async u=>{
     document.getElementById('app').style.display='none';
   }
 });
-async function loadProf(uid){
-  const s=await getDoc(doc(db,'users',uid));
-  uProf=s.exists()?s.data():{role:'admin',nomJeu:'',email:aUser.email};
-  if(uProf.rangId&&uProf.role!=='admin'){const rs=await getDoc(doc(db,'rangs',uProf.rangId));if(rs.exists())uRang={id:rs.id,...rs.data()};}
-}
-document.getElementById('lb').onclick=async()=>{
-  const e=document.getElementById('le').value.trim(),p=document.getElementById('lp').value;
-  document.getElementById('lerr').textContent='';
-  try{await signInWithEmailAndPassword(auth,e,p);}catch{document.getElementById('lerr').textContent='Email ou mot de passe incorrect.';}
-};
+async function loadProf(uid){const s=await getDoc(doc(db,'users',uid));uProf=s.exists()?s.data():{role:'admin',nomJeu:'',email:aUser.email};if(uProf.rangId&&uProf.role!=='admin'){const rs=await getDoc(doc(db,'rangs',uProf.rangId));if(rs.exists())uRang={id:rs.id,...rs.data()};}}
+document.getElementById('lb').onclick=async()=>{const e=document.getElementById('le').value.trim(),p=document.getElementById('lp').value;document.getElementById('lerr').textContent='';try{await signInWithEmailAndPassword(auth,e,p);}catch{document.getElementById('lerr').textContent='Email ou mot de passe incorrect.';}};
 document.getElementById('login-screen').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('lb').click();});
 document.getElementById('lo-btn').onclick=()=>signOut(auth);
 
@@ -591,9 +546,8 @@ function setup(){
   const isAdmin=uProf?.role==='admin';
   document.getElementById('nav-admin').style.display=isAdmin?'block':'none';
   document.getElementById('nav-vendor').style.display=isAdmin?'none':'block';
-  if(isAdmin){
-    document.getElementById('tb-rang').innerHTML='<span class="bdg bgd">👑 Admin</span>';swTab('bilan');
-  }else{
+  if(isAdmin){document.getElementById('tb-rang').innerHTML='<span class="bdg bgd">👑 Admin</span>';swTab('bilan');}
+  else{
     const p=uRang?.permissions||{},c=uRang?.couleur||'#7c3aed',n=uRang?.nom||'Employé';
     document.getElementById('tb-rang').innerHTML=`<span class="u-rang-tb" style="background:${c}22;color:${c};border:1px solid ${c}44">${n}</span>`;
     const sh=(id,v)=>{const el=document.getElementById(id);if(el)el.style.display=v?'flex':'none';};
@@ -603,22 +557,17 @@ function setup(){
   }
   updateWeekLabels();
 }
-function swTab(name){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
-  const el=document.getElementById('tab-'+name);if(el)el.classList.add('active');
-  document.querySelectorAll('.nb').forEach(b=>{if(b.dataset.tab===name)b.classList.add('active');});
-}
+function swTab(name){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));const el=document.getElementById('tab-'+name);if(el)el.classList.add('active');document.querySelectorAll('.nb').forEach(b=>{if(b.dataset.tab===name)b.classList.add('active');});}
 document.querySelectorAll('.nb').forEach(b=>b.addEventListener('click',()=>swTab(b.dataset.tab)));
 
 function startListeners(){
   const isAdmin=uProf?.role==='admin';
   const cutoff=new Date(Date.now()-14*24*60*60*1000);
   const jsFilter=arr=>arr.filter(d=>{const ts=d.timestamp?.toDate?.()??d.debut?.toDate?.()??null;return ts?ts>=cutoff:true;});
-  unsubs.push(onSnapshot(query(collection(db,'transactions'),orderBy('timestamp','desc'),limit(1000)),s=>{TX=jsFilter(s.docs.map(d=>({id:d.id,...d.data()})));renderBilan();renderTX();if(!isAdmin)renderVendorTableau();}));
+  unsubs.push(onSnapshot(query(collection(db,'transactions'),orderBy('timestamp','desc'),limit(1000)),s=>{TX=jsFilter(s.docs.map(d=>({id:d.id,...d.data()})));renderBilan();renderTX();renderDepenses();if(!isAdmin)renderVendorTableau();}));
   unsubs.push(onSnapshot(query(collection(db,'factures'),orderBy('timestamp','desc'),limit(1000)),s=>{FAC=jsFilter(s.docs.map(d=>({id:d.id,...d.data()})));renderFactures();renderSalaries();renderBilan();if(isAdmin)renderImpots();if(!isAdmin)renderVendorTableau();}));
   unsubs.push(onSnapshot(query(collection(db,'stock_mouvements'),orderBy('timestamp','desc'),limit(2000)),s=>{STK=jsFilter(s.docs.map(d=>({id:d.id,...d.data()})));renderStock();}));
-  unsubs.push(onSnapshot(query(collection(db,'services'),orderBy('debut','desc'),limit(500)),s=>{SVC=s.docs.map(d=>({id:d.id,...d.data()})).filter(d=>d.debut?.toDate?.()>=cutoff);renderSalaries();if(!isAdmin){renderMyServices();renderVendorTableau();}}));
+  unsubs.push(onSnapshot(query(collection(db,'services'),orderBy('debut','desc'),limit(500)),s=>{SVC=s.docs.map(d=>({id:d.id,...d.data()})).filter(d=>d.debut?.toDate?.()>=cutoff);renderSalaries();if(isAdmin)renderEnService();if(!isAdmin){renderMyServices();renderVendorTableau();}}));
   unsubs.push(onSnapshot(query(collection(db,'productions'),orderBy('timestamp','desc'),limit(500)),s=>{PROD=jsFilter(s.docs.map(d=>({id:d.id,...d.data()})));renderProdRecap();if(!isAdmin)renderMyProd();}));
   unsubs.push(onSnapshot(query(collection(db,'station_fills'),orderBy('timestamp','desc'),limit(500)),s=>{STATIONS=s.docs.map(d=>({id:d.id,...d.data()})).filter(d=>d.timestamp?.toDate?.()>=cutoff);if(isAdmin)renderStations();}));
   unsubs.push(onSnapshot(query(collection(db,'produits'),orderBy('nom')),s=>{produits=s.docs.map(d=>({id:d.id,...d.data()}));if(isAdmin){renderProduits();renderRangs();renderStock();}else{buildProdDropdown();}}));
@@ -633,7 +582,7 @@ const fmt=n=>n==null?'—':Number(n).toLocaleString('fr-FR')+'$';
 const fmtN=n=>n==null?'—':Number(n).toLocaleString('fr-FR');
 function fmtD(ts){if(!ts)return'—';try{const d=ts.toDate?ts.toDate():new Date(ts);return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}catch{return'—';}}
 function fmtDur(m){if(!m&&m!==0)return'—';return Math.floor(m/60)+'h'+(m%60).toString().padStart(2,'0');}
-const cLbl=c=>({vente_client:'Vente client',essence:'Essence',depense_facture:'Dépense facture',salaire:'Salaire',approvisionnement:'Appro.',autre:'Autre'}[c]||c||'Autre');
+const cLbl=c=>({vente_client:'Vente client',essence:'Essence',depense_facture:'Dépense facture',salaire:'Salaire',approvisionnement:'Appro.',loyer:'Loyer',autre:'Autre'}[c]||c||'Autre');
 const cBdg=(c,t)=>t==='entree'?(c==='vente_client'?'bg':c==='essence'?'bgd':'bb'):'br';
 const weekTX=()=>TX.filter(t=>inSelectedWeek(t.timestamp));
 const weekFAC=()=>FAC.filter(f=>inSelectedWeek(f.timestamp));
@@ -647,19 +596,49 @@ function renderEnService(){
   count.textContent=actifs.length+' actif'+(actifs.length>1?'s':'');
   count.className='bdg '+(actifs.length>0?'bt':'bgr');
   if(!actifs.length){list.innerHTML='<span style="color:var(--muted);font-size:.82rem">Aucun employé en service</span>';return;}
-  list.innerHTML=actifs.map(s=>{
-    const debut=s.debut?.toDate?.();
-    const dureeMin=debut?Math.round((new Date()-debut)/60000):0;
-    const dureeStr=Math.floor(dureeMin/60)+'h'+String(dureeMin%60).padStart(2,'0');
-    return`<div style="display:flex;align-items:center;gap:.5rem;background:rgba(20,184,166,.08);border:1px solid rgba(20,184,166,.25);border-radius:8px;padding:.4rem .75rem">
-      <span style="width:8px;height:8px;background:var(--teal);border-radius:50%;display:inline-block;animation:pu 2s infinite"></span>
-      <span style="font-weight:700;font-size:.85rem">${s.employeNom}</span>
-      <span style="font-size:.75rem;color:var(--muted)">${debut?fmtD(s.debut):'—'}</span>
-      <span style="font-size:.75rem;color:var(--teal);font-family:Rajdhani,sans-serif;font-weight:700">${dureeStr}</span>
-      <button onclick="window.closeService('${s.id}',${dureeMin})" style="margin-left:.5rem;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:5px;padding:.15rem .5rem;color:var(--red);cursor:pointer;font-size:.7rem;font-weight:700">✕</button>
-    </div>`;
-  }).join('');;
+  list.innerHTML=actifs.map(s=>{const debut=s.debut?.toDate?.();const dureeMin=debut?Math.round((new Date()-debut)/60000):0;const dureeStr=Math.floor(dureeMin/60)+'h'+String(dureeMin%60).padStart(2,'0');return`<div style="display:flex;align-items:center;gap:.5rem;background:rgba(20,184,166,.08);border:1px solid rgba(20,184,166,.25);border-radius:8px;padding:.4rem .75rem"><span style="width:8px;height:8px;background:var(--teal);border-radius:50%;display:inline-block;animation:pu 2s infinite"></span><span style="font-weight:700;font-size:.85rem">${s.employeNom}</span><span style="font-size:.75rem;color:var(--muted)">${debut?fmtD(s.debut):'—'}</span><span style="font-size:.75rem;color:var(--teal);font-family:Rajdhani,sans-serif;font-weight:700">${dureeStr}</span><button onclick="window.closeService('${s.id}',${dureeMin})" style="margin-left:.5rem;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:5px;padding:.15rem .5rem;color:var(--red);cursor:pointer;font-size:.7rem;font-weight:700">✕</button></div>`;}).join('');
 }
+
+// ════ DÉPENSES ════
+function renderDepenses(){
+  const cat=($('fdep-cat')?.value)||'',sr=($('fdep-s')?.value||'').toLowerCase();
+  let d=weekTX().filter(t=>t.type==='sortie');
+  if(cat)d=d.filter(t=>t.categorie===cat);
+  if(sr)d=d.filter(t=>(t.raison||'').toLowerCase().includes(sr)||(t.personne||'').toLowerCase().includes(sr));
+  const cats={};for(const t of d)cats[t.categorie||'autre']=(cats[t.categorie||'autre']||0)+(t.montant||0);
+  const catColors={approvisionnement:'var(--pl)',salaire:'var(--gold)',loyer:'var(--teal)',autre:'var(--muted)'};
+  $('dep-stats').innerHTML=Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`<div class="sc r"><div class="sl">${cLbl(c)}</div><div class="sv" style="color:${catColors[c]||'var(--red)'}">${fmt(v)}</div></div>`).join('');
+  const total=d.reduce((s,t)=>s+(t.montant||0),0);
+  $('dep-body').innerHTML=d.map(t=>`<tr>
+    <td class="tm">${fmtD(t.timestamp)}</td>
+    <td class="tmono" style="color:var(--red)">${fmt(t.montant)}</td>
+    <td><span class="bdg br">${cLbl(t.categorie)}</span></td>
+    <td class="tm">${t.personne||'—'}</td>
+    <td class="tm" style="max-width:220px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis" title="${(t.raison||'').replace(/"/g,'&quot;')}">${t.raison||'—'}</td>
+    <td><button class="corr-btn" onclick="window.editTX('${t.id}','${t.categorie||'autre'}',this)">✏️</button></td>
+  </tr>`).join('')||'<tr><td colspan="6"><div class="empty"><div class="ei">💸</div>Aucune dépense cette semaine</div></td></tr>';
+  const el=$('dep-total');if(el)el.textContent=`Total dépenses : ${fmt(total)} — ${d.length} transaction${d.length>1?'s':''}`;
+}
+['fdep-cat','fdep-s'].forEach(id=>$(id)?.addEventListener('input',renderDepenses));
+
+window.editTX=function(id,cat,btn){
+  const row=btn.closest('tr');
+  const currentRaison=row?.cells[4]?.getAttribute('title')||'';
+  const currentPers=row?.cells[3]?.textContent==='—'?'':row?.cells[3]?.textContent||'';
+  const CATS=[['approvisionnement','Approvisionnement'],['salaire','Salaire'],['loyer','Loyer'],['autre','Autre']];
+  const catOpts=CATS.map(([v,l])=>`<option value="${v}"${v===cat?' selected':''}>${l}</option>`).join('');
+  const html=`
+    <div class="mf"><label class="ml">Catégorie</label><select id="etx-cat" class="inp fs" style="width:100%">${catOpts}</select></div>
+    <div class="mf"><label class="ml">Personne / Fournisseur</label><input id="etx-pers" type="text" class="inp" value="${currentPers}" placeholder="Nom…"/></div>
+    <div class="mf"><label class="ml">Note / Raison</label><input id="etx-raison" type="text" class="inp" value="${currentRaison}" placeholder="Ex: Achat boutique, loyer mars…"/></div>`;
+  showModal('Modifier la dépense',html,async()=>{
+    const newCat=document.getElementById('etx-cat')?.value||cat;
+    const newRaison=document.getElementById('etx-raison')?.value||'';
+    const newPers=document.getElementById('etx-pers')?.value||'';
+    await setDoc(doc(db,'transactions',id),{categorie:newCat,raison:newRaison,personne:newPers},{merge:true});
+    hideModal();
+  });
+};
 
 function renderBilan(){
   const txW=weekTX(),ent=txW.filter(t=>t.type==='entree'),sor=txW.filter(t=>t.type==='sortie');
@@ -675,108 +654,70 @@ function renderBilan(){
   const mv=Math.max(...Object.values(cats),1);
   const cl={vente_client:'#10b981',essence:'#f59e0b',autre:'#7c3aed',salaire:'#ef4444',approvisionnement:'#6366f1'};
   $('brep').innerHTML=Object.entries(cats).length?Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`<div class="rr"><div class="rl">${cLbl(c)}</div><div class="rbw"><div class="rb" style="width:${(v/mv*100).toFixed(1)}%;background:${cl[c]||'#7c3aed'}"></div></div><div class="rv" style="color:${cl[c]||'#7c3aed'}">${fmt(v)}</div></div>`).join(''):'<div class="empty"><div class="ei">📊</div>Aucune donnée pour cette semaine</div>';
-  $('brecent').innerHTML=txW.slice(0,10).map(t=>`<tr><td class="tm">${fmtD(t.timestamp)}</td><td><span class="bdg ${t.type==='entree'?'bg':'br'}">${t.type==='entree'?'↑':'↓'} ${t.type==='entree'?'Entrée':'Sortie'}</span></td><td class="tmono" style="color:${t.type==='entree'?'var(--green)':'var(--red)'}">${fmt(t.montant)}</td><td><span class="bdg ${cBdg(t.categorie,t.type)}">${cLbl(t.categorie)}</span></td><td class="tm">${t.personne||'—'}</td></tr>`).join('')|| '<tr><td colspan="5"><div class="empty"><div class="ei">💸</div>Aucune transaction cette semaine</div></td></tr>';
+  $('brecent').innerHTML=txW.slice(0,10).map(t=>`<tr><td class="tm">${fmtD(t.timestamp)}</td><td><span class="bdg ${t.type==='entree'?'bg':'br'}">${t.type==='entree'?'↑':'↓'} ${t.type==='entree'?'Entrée':'Sortie'}</span></td><td class="tmono" style="color:${t.type==='entree'?'var(--green)':'var(--red)'}">${fmt(t.montant)}</td><td><span class="bdg ${cBdg(t.categorie,t.type)}">${cLbl(t.categorie)}</span></td><td class="tm">${t.personne||'—'}</td></tr>`).join('')||'<tr><td colspan="5"><div class="empty"><div class="ei">💸</div>Aucune transaction cette semaine</div></td></tr>';
 }
+
 function renderTX(){
   const tp=$('ftt').value,ct=$('ftc').value,sr=$('fts').value.toLowerCase();
   let d=weekTX();
   if(tp)d=d.filter(t=>t.type===tp);if(ct)d=d.filter(t=>t.categorie===ct);
-  if(sr)d=d.filter(t=>(t.personne||''). toLowerCase().includes(sr)||(t.raison||'').toLowerCase().includes(sr));
+  if(sr)d=d.filter(t=>(t.personne||'').toLowerCase().includes(sr)||(t.raison||'').toLowerCase().includes(sr));
   $('txc').textContent=`${d.length} résultat${d.length>1?'s':''}`;
-  $('txb').innerHTML=d.map(t=>`<tr><td class="tm">${fmtD(t.timestamp)}</td><td><span class="bdg ${t.type==='entree'?'bg':'br'}">${t.type==='entree'?'↑ Entrée':'↓ Sortie'}</span></td><td class="tmono" style="color:${t.type==='entree'?'var(--green)':'var(--red)'}">${fmt(t.montant)}</td><td><span class="bdg ${cBdg(t.categorie,t.type)}">${cLbl(t.categorie)}</span></td><td class="tm">${t.personne||'—'}</td><td class="tm" style="max-width:180px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${t.raison||'—'}</td><td class="tmono" style="color:var(--pl)">${fmt(t.soldeApres)}</td></tr>`).join('')|| '<tr><td colspan="7"><div class="empty"><div class="ei">🔍</div>Aucune transaction</div></td></tr>';
+  $('txb').innerHTML=d.map(t=>`<tr><td class="tm">${fmtD(t.timestamp)}</td><td><span class="bdg ${t.type==='entree'?'bg':'br'}">${t.type==='entree'?'↑ Entrée':'↓ Sortie'}</span></td><td class="tmono" style="color:${t.type==='entree'?'var(--green)':'var(--red)'}">${fmt(t.montant)}</td><td><span class="bdg ${cBdg(t.categorie,t.type)}">${cLbl(t.categorie)}</span></td><td class="tm">${t.personne||'—'}</td><td class="tm" style="max-width:180px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${t.raison||'—'}</td><td class="tmono" style="color:var(--pl)">${fmt(t.soldeApres)}</td><td>${t.type==='sortie'?`<button class="corr-btn" onclick="window.editTX('${t.id}','${t.categorie||'autre'}',this)">✏️</button>`:''}</td></tr>`).join('')||'<tr><td colspan="8"><div class="empty"><div class="ei">🔍</div>Aucune transaction</div></td></tr>';
 }
 ['ftt','ftc','fts'].forEach(id=>$(id)?.addEventListener('input',renderTX));
 
 function renderStock(){
   const sr=$('fss').value.toLowerCase(),tp=$('fst').value;
-  const m={};
-  const orderedSTK=[...STK].reverse();
-  for(const x of orderedSTK){
-    const i=x.item||'?';if(!m[i])m[i]={t:0,a:0,r:0};
-    if(x.type==='reset'){m[i].t=0;}else if(x.type==='correction'){m[i].t=x.count||0;}
-    else if(x.type==='add'){m[i].t+=x.count||0;m[i].a+=x.count||0;}else{m[i].t-=x.count||0;m[i].r+=x.count||0;}
-  }
+  const m={};const orderedSTK=[...STK].reverse();
+  for(const x of orderedSTK){const i=x.item||'?';if(!m[i])m[i]={t:0,a:0,r:0};if(x.type==='reset'){m[i].t=0;}else if(x.type==='correction'){m[i].t=x.count||0;}else if(x.type==='add'){m[i].t+=x.count||0;m[i].a+=x.count||0;}else{m[i].t-=x.count||0;m[i].r+=x.count||0;}}
   const sortMode=document.getElementById('stk-sort')?.value||'custom';
   const getPos=igN=>{const pm=produits.find(p=>p.igNom&&p.igNom.toLowerCase()===igN.toLowerCase());return pm?.position??99;};
   const sortFn=(a,b)=>sortMode==='custom'?getPos(a[0])-getPos(b[0]):sortMode==='asc'?a[1].t-b[1].t:sortMode==='alpha'?a[0].localeCompare(b[0]):b[1].t-a[1].t;
   const stk_sr=(document.getElementById('stk-search')?.value||'').toLowerCase().trim();
-  $('stk-cards').innerHTML=Object.entries(m).sort(sortFn).filter(([igNom])=>{
-    if(stk_sr){const pm2=produits.find(p=>p.igNom&&p.igNom.toLowerCase()===igNom.toLowerCase());const lbl2=pm2?pm2.nom:igNom;if(!lbl2.toLowerCase().includes(stk_sr)&&!igNom.toLowerCase().includes(stk_sr))return false;}
-    const pm3=produits.find(p=>p.igNom&&p.igNom.toLowerCase()===igNom.toLowerCase());
-    if(pm3&&pm3.showInStock===false)return false;return true;
-  }).map(([igNom,d])=>{
-    const pm=produits.find(p=>p.igNom&&p.igNom.toLowerCase()===igNom.toLowerCase());
-    const lbl=pm?pm.nom:igNom;const iSafe=igNom.replace(/[^a-zA-Z0-9]/g,'-');
-    return`<div class="sk"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.3rem"><div><div class="skn" style="margin-bottom:.1rem">${lbl}</div>${pm?'':`<div style="font-size:.65rem;color:var(--dim)">${igNom}</div>`}</div><button class="corr-btn" onclick="toggleCorr('${igNom}')">✏️</button></div><div class="skq" style="color:${d.t>0?'var(--pl)':d.t<0?'var(--red)':'var(--muted)'}">${d.t}</div>${d.t===0?'<div style="font-size:.65rem;color:var(--muted);margin-top:.15rem">Stock vide</div>':''}<div class="skd"><span style="color:var(--green)">+${d.a}</span><span style="color:var(--red)">-${d.r}</span></div><div class="corr-form" id="cf-${iSafe}"><select id="ct-${iSafe}" class="corr-inp"><option value="add">+ Ajout</option><option value="remove">- Retrait</option><option value="set">= Définir valeur</option></select><input id="cq-${iSafe}" type="number" min="0" class="corr-inp" placeholder="Qté" style="width:70px"/><input id="cm-${iSafe}" type="text" class="corr-inp" placeholder="Motif…" style="flex:1;min-width:80px"/><button class="btn-p" style="padding:.4rem .7rem;font-size:.78rem" onclick="submitCorr2('${igNom}')">OK</button><button class="btn-d" style="padding:.4rem .7rem;font-size:.78rem" onclick="resetStock('${igNom}')">🔄 RAZ</button></div></div>`;
-  }).join('')|| '<div class="empty"><div class="ei">📦</div>Aucun mouvement</div>';
-  let d=[...STK];
-  d=d.filter(x=>{const pm=produits.find(p=>p.igNom&&p.igNom.toLowerCase()===(x.item||'').toLowerCase());return!(pm&&pm.showInStock===false);});
+  $('stk-cards').innerHTML=Object.entries(m).sort(sortFn).filter(([igNom])=>{if(stk_sr){const pm2=produits.find(p=>p.igNom&&p.igNom.toLowerCase()===igNom.toLowerCase());const lbl2=pm2?pm2.nom:igNom;if(!lbl2.toLowerCase().includes(stk_sr)&&!igNom.toLowerCase().includes(stk_sr))return false;}const pm3=produits.find(p=>p.igNom&&p.igNom.toLowerCase()===igNom.toLowerCase());if(pm3&&pm3.showInStock===false)return false;return true;}).map(([igNom,d])=>{const pm=produits.find(p=>p.igNom&&p.igNom.toLowerCase()===igNom.toLowerCase());const lbl=pm?pm.nom:igNom;const iSafe=igNom.replace(/[^a-zA-Z0-9]/g,'-');return`<div class="sk"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.3rem"><div><div class="skn" style="margin-bottom:.1rem">${lbl}</div>${pm?'':`<div style="font-size:.65rem;color:var(--dim)">${igNom}</div>`}</div><button class="corr-btn" onclick="toggleCorr('${igNom}')">✏️</button></div><div class="skq" style="color:${d.t>0?'var(--pl)':d.t<0?'var(--red)':'var(--muted)'}">${d.t}</div>${d.t===0?'<div style="font-size:.65rem;color:var(--muted);margin-top:.15rem">Stock vide</div>':''}<div class="skd"><span style="color:var(--green)">+${d.a}</span><span style="color:var(--red)">-${d.r}</span></div><div class="corr-form" id="cf-${iSafe}"><select id="ct-${iSafe}" class="corr-inp"><option value="add">+ Ajout</option><option value="remove">- Retrait</option><option value="set">= Définir valeur</option></select><input id="cq-${iSafe}" type="number" min="0" class="corr-inp" placeholder="Qté" style="width:70px"/><input id="cm-${iSafe}" type="text" class="corr-inp" placeholder="Motif…" style="flex:1;min-width:80px"/><button class="btn-p" style="padding:.4rem .7rem;font-size:.78rem" onclick="submitCorr2('${igNom}')">OK</button><button class="btn-d" style="padding:.4rem .7rem;font-size:.78rem" onclick="resetStock('${igNom}')">🔄 RAZ</button></div></div>`;}).join('')||'<div class="empty"><div class="ei">📦</div>Aucun mouvement</div>';
+  let d=[...STK];d=d.filter(x=>{const pm=produits.find(p=>p.igNom&&p.igNom.toLowerCase()===(x.item||'').toLowerCase());return!(pm&&pm.showInStock===false);});
   if(sr)d=d.filter(x=>{const pm=produits.find(p=>p.igNom&&p.igNom.toLowerCase()===(x.item||'').toLowerCase());const lbl=pm?pm.nom:x.item||'';return lbl.toLowerCase().includes(sr)||(x.item||'').toLowerCase().includes(sr)||(x.nomJeu||'').toLowerCase().includes(sr);});
   if(tp)d=d.filter(x=>x.type===tp);
-  $('stkb').innerHTML=d.slice(0,30).map(x=>`<tr><td class="tm">${x.date||fmtD(x.timestamp)}</td><td style="font-weight:600">${x.item||'—'}</td><td><span class="bdg ${x.type==='add'?'bg':'br'}">${x.type==='add'?'+':'-'}</span></td><td class="tmono" style="color:${x.type==='add'?'var(--green)':'var(--red)'}">${x.type==='add'?'+':'-'}${x.count||0}</td><td class="tm">${x.nomJeu||x.name||'—'}</td></tr>`).join('')|| '<tr><td colspan="5"><div class="empty"><div class="ei">📦</div>Aucun mouvement</div></td></tr>';
+  $('stkb').innerHTML=d.slice(0,30).map(x=>`<tr><td class="tm">${x.date||fmtD(x.timestamp)}</td><td style="font-weight:600">${x.item||'—'}</td><td><span class="bdg ${x.type==='add'?'bg':'br'}">${x.type==='add'?'+':'-'}</span></td><td class="tmono" style="color:${x.type==='add'?'var(--green)':'var(--red)'}">${x.type==='add'?'+':'-'}${x.count||0}</td><td class="tm">${x.nomJeu||x.name||'—'}</td></tr>`).join('')||'<tr><td colspan="5"><div class="empty"><div class="ei">📦</div>Aucun mouvement</div></td></tr>';
 }
 ['fss','fst','stk-sort','stk-search'].forEach(id=>$(id)?.addEventListener('input',renderStock));
 
 function renderSalaries(){
   const facW=weekFAC(),svcW=weekSVC(),empMap={};
-  // Initialiser tous les comptes utilisateurs
-  for(const u of USERS){
-    if(u.role==='admin'||!u.nomJeu)continue;
-    if(!empMap[u.nomJeu])empMap[u.nomJeu]={ca:0,nbFac:0,minSvc:0,bonusProd:0};
-  }
+  for(const u of USERS){if(u.role==='admin'||!u.nomJeu)continue;if(!empMap[u.nomJeu])empMap[u.nomJeu]={ca:0,nbFac:0,minSvc:0,bonusProd:0};}
   for(const f of facW){const n=f.emetteur||'Inconnu';if(!n||n==='Inconnu')continue;if(!empMap[n])empMap[n]={ca:0,nbFac:0,minSvc:0,bonusProd:0};if(f.status==='payee')empMap[n].ca+=f.montant||0;empMap[n].nbFac++;}
   for(const s of svcW){const n=s.employeNom||'';if(!n)continue;if(!empMap[n])empMap[n]={ca:0,nbFac:0,minSvc:0,bonusProd:0};empMap[n].minSvc+=s.duree||0;}
-  // Bonus production — inclut tous les employés même sans factures
-  for(const p of weekPROD()){
-    const n=p.nomJeu||'';if(!n)continue;
-    if(!empMap[n])empMap[n]={ca:0,nbFac:0,minSvc:0,bonusProd:0};
-    if(!empMap[n].bonusProd)empMap[n].bonusProd=0;
-    const prodDef=produits.find(x=>x.nom===p.item||x.igNom===p.item);
-    empMap[n].bonusProd+=(prodDef?.prix||0)*(p.quantite||0);
-  }
+  for(const p of weekPROD()){const n=p.nomJeu||'';if(!n)continue;if(!empMap[n])empMap[n]={ca:0,nbFac:0,minSvc:0,bonusProd:0};if(!empMap[n].bonusProd)empMap[n].bonusProd=0;const prodDef=produits.find(x=>x.nom===p.item||x.igNom===p.item);empMap[n].bonusProd+=(prodDef?.prix||0)*(p.quantite||0);}
   const rows=Object.entries(empMap).sort((a,b)=>b[1].ca-a[1].ca);
   const getRang=nom=>{const u=USERS.find(u=>u.nomJeu===nom);const r=RANGS.find(r=>r.id===u?.rangId);return r?`<span class="bdg" style="background:${r.couleur||'#7c3aed'}22;color:${r.couleur||'#7c3aed'}">${r.nom}</span>`:'<span class="bdg bgr">—</span>';};
   const knownNames=USERS.map(u=>u.nomJeu?.toLowerCase()).filter(Boolean);
   const missing=Object.keys(empMap).filter(n=>n!=='Inconnu'&&n&&!knownNames.includes(n.toLowerCase()));
   const syncBanner=document.getElementById('sync-banner'),syncMsg=document.getElementById('sync-msg');
-  if(syncBanner&&syncMsg){if(missing.length>0){syncBanner.style.display='flex';syncMsg.textContent=missing.length+' employé'+(missing.length>1?'s':'')+ ' détecté'+(missing.length>1?'s':'')+' sans compte : '+missing.join(', ');}else{syncBanner.style.display='none';}}
+  if(syncBanner&&syncMsg){if(missing.length>0){syncBanner.style.display='flex';syncMsg.textContent=missing.length+' employé'+(missing.length>1?'s':'')+' détecté'+(missing.length>1?'s':'')+' sans compte : '+missing.join(', ');}else{syncBanner.style.display='none';}}
   $('sal-body').innerHTML=rows.length?rows.map(([n,d])=>{
-    const salBase=Math.round(d.ca*.3);
-    const bonus=d.bonusProd||0;
-    let salTotal=salBase+bonus;
-    // Appliquer min/max du rang
-    const u=USERS.find(u=>u.nomJeu===n);
-    const rang=RANGS.find(r=>r.id===u?.rangId);
-    const salMin=rang?.salaireMin||0;
-    const salMax=rang?.salaireMax||0;
-    const salAvantBorne=salTotal;
-    if(salMin>0&&salTotal<salMin)salTotal=salMin;
-    if(salMax>0&&salTotal>salMax)salTotal=salMax;
+    const salBase=Math.round(d.ca*.3);const bonus=d.bonusProd||0;let salTotal=salBase+bonus;
+    const u=USERS.find(u=>u.nomJeu===n);const rang=RANGS.find(r=>r.id===u?.rangId);
+    const salMin=rang?.salaireMin||0,salMax=rang?.salaireMax||0;const salAvantBorne=salTotal;
+    if(salMin>0&&salTotal<salMin)salTotal=salMin;if(salMax>0&&salTotal>salMax)salTotal=salMax;
     const borneLbl=salTotal!==salAvantBorne?`<span style="font-size:.68rem;color:var(--gold);margin-left:.4rem">${salTotal>salAvantBorne?'▲ min':'▼ max'}</span>`:'';
-    return`<tr>
-      <td style="font-weight:700">${n}</td>
-      <td>${getRang(n)}</td>
-      <td class="tmono" style="color:var(--green)">${fmt(d.ca)}</td>
-      <td class="tmono" style="color:var(--gold)">${fmt(salTotal)}${bonus>0?`<span style="font-size:.7rem;color:var(--teal);margin-left:.4rem">(+${fmt(bonus)} prod)</span>`:''}${borneLbl}</td>
-      <td class="tmono" style="color:var(--teal)">${fmtDur(d.minSvc)}</td>
-      <td class="tmono" style="color:var(--pl)">${d.nbFac}</td>
-    </tr>`;}).join(''):'<tr><td colspan="6"><div class="empty"><div class="ei">👥</div>Aucun employé actif cette semaine</div></td></tr>';
+    return`<tr><td style="font-weight:700">${n}</td><td>${getRang(n)}</td><td class="tmono" style="color:var(--green)">${fmt(d.ca)}</td><td class="tmono" style="color:var(--gold)">${fmt(salTotal)}${bonus>0?`<span style="font-size:.7rem;color:var(--teal);margin-left:.4rem">(+${fmt(bonus)} prod)</span>`:''}${borneLbl}</td><td class="tmono" style="color:var(--teal)">${fmtDur(d.minSvc)}</td><td class="tmono" style="color:var(--pl)">${d.nbFac}</td></tr>`;
+  }).join(''):'<tr><td colspan="6"><div class="empty"><div class="ei">👥</div>Aucun employé actif cette semaine</div></td></tr>';
 }
 
 function renderFactures(){
-  const sr=$('ffac-s')?.value.toLowerCase()||''  ,st=$('ffac-st')?.value||'';
+  const sr=$('ffac-s')?.value.toLowerCase()||'',st=$('ffac-st')?.value||'';
   let d=weekFAC();
   if(sr)d=d.filter(f=>(f.emetteur||'').toLowerCase().includes(sr)||(f.raison||'').toLowerCase().includes(sr));
   if(st)d=d.filter(f=>f.status===st);
   const total=d.filter(f=>f.status==='payee').reduce((s,f)=>s+(f.montant||0),0);
-  $('fac-body').innerHTML=d.map(f=>`<tr><td class="tm">${f.creeLe||fmtD(f.timestamp)}</td><td style="font-weight:600">${f.emetteur||'—'}</td><td class="tm">${f.destinataire||'—'}</td><td class="tmono" style="color:var(--green)">${fmt(f.montant)}</td><td class="tm" style="max-width:160px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${f.raison||'—'}</td><td><span class="bdg ${f.status==='payee'?'bg':'bgd'}">${f.status==='payee'?'✓ Payée':'⏳ En attente'}</span></td><td class="tm">${f.paiement||'—'}</td></tr>`).join('')|| '<tr><td colspan="7"><div class="empty"><div class="ei">🧾</div>Aucune facture cette semaine</div></td></tr>';
+  $('fac-body').innerHTML=d.map(f=>`<tr><td class="tm">${f.creeLe||fmtD(f.timestamp)}</td><td style="font-weight:600">${f.emetteur||'—'}</td><td class="tm">${f.destinataire||'—'}</td><td class="tmono" style="color:var(--green)">${fmt(f.montant)}</td><td class="tm" style="max-width:160px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${f.raison||'—'}</td><td><span class="bdg ${f.status==='payee'?'bg':'bgd'}">${f.status==='payee'?'✓ Payée':'⏳ En attente'}</span></td><td class="tm">${f.paiement||'—'}</td></tr>`).join('')||'<tr><td colspan="7"><div class="empty"><div class="ei">🧾</div>Aucune facture cette semaine</div></td></tr>';
   const el=$('fac-total');if(el)el.textContent=`Total encaissé : ${fmt(total)} — ${d.length} facture${d.length>1?'s':''}`;
 }
 ['ffac-s','ffac-st'].forEach(id=>$(id)?.addEventListener('input',renderFactures));
 
 function renderStations(){
-  const weekSTA=STATIONS.filter(s=>inSelectedWeek(s.timestamp));
-  const empMap={};
+  const weekSTA=STATIONS.filter(s=>inSelectedWeek(s.timestamp));const empMap={};
   for(const s of weekSTA){const n=s.employeNom||'Inconnu';if(!empMap[n])empMap[n]={sessions:0,total:0};empMap[n].sessions++;empMap[n].total+=s.volAdded||0;}
   const rows=Object.entries(empMap).sort((a,b)=>b[1].total-a[1].total);
   const totalVol=rows.reduce((s,[,d])=>s+d.total,0),totalSessions=rows.reduce((s,[,d])=>s+d.sessions,0);
@@ -785,7 +726,7 @@ function renderStations(){
   const sta_body=document.getElementById('sta-body');
   if(sta_body)sta_body.innerHTML=rows.length?rows.map(([n,d])=>'<tr><td style="font-weight:700">'+n+'</td><td class="tmono" style="color:var(--pl)">'+d.sessions+'</td><td class="tmono" style="color:var(--gold)">'+fmtN(d.total)+'L</td><td class="tmono" style="color:var(--muted)">'+fmtN(Math.round(d.total/d.sessions))+'L</td></tr>').join(''):'<tr><td colspan="4"><div class="empty"><div class="ei">⛽</div>Aucun remplissage cette semaine</div></td></tr>';
   const sta_detail=document.getElementById('sta-detail');
-  if(sta_detail)sta_detail.innerHTML=weekSTA.slice(0,50).map(s=>'<tr><td class="tm">'+(s.date||fmtD(s.timestamp))+'</td><td style="font-weight:600">'+(s.employeNom||'—')+'</td><td class="tmono" style="color:var(--gold)">+'+fmtN(s.volAdded)+'L</td><td class="tm">'+'Station '+(s.markerId||'?')+'</td></tr>').join('')|| '<tr><td colspan="4"><div class="empty"><div class="ei">⛽</div>Aucun détail</div></td></tr>';
+  if(sta_detail)sta_detail.innerHTML=weekSTA.slice(0,50).map(s=>'<tr><td class="tm">'+(s.date||fmtD(s.timestamp))+'</td><td style="font-weight:600">'+(s.employeNom||'—')+'</td><td class="tmono" style="color:var(--gold)">+'+fmtN(s.volAdded)+'L</td><td class="tm">'+'Station '+(s.markerId||'?')+'</td></tr>').join('')||'<tr><td colspan="4"><div class="empty"><div class="ei">⛽</div>Aucun détail</div></td></tr>';
 }
 
 function renderProdRecap(){
@@ -797,24 +738,9 @@ function renderProdRecap(){
 window.openAddProdDecl=function(){
   const empOpts=USERS.filter(u=>u.role!=='admin'&&u.nomJeu).map(u=>`<option value="${u.nomJeu}">${u.nomJeu}</option>`).join('');
   const prodOpts=produits.filter(p=>p.production).map(p=>`<option value="${p.nom}">${p.nom}${p.prix>0?' (+'+p.prix+'$/u)':''}</option>`).join('');
-  const html=`
-    <div class="mf"><label class="ml">Employé</label>
-      <select id="pd-emp" class="inp fs" style="width:100%">
-        <option value="">— Choisir un employé —</option>${empOpts}
-      </select>
-    </div>
-    <div class="mf"><label class="ml">Produit</label>
-      <select id="pd-item" class="inp fs" style="width:100%">
-        <option value="">— Choisir un produit —</option>${prodOpts}
-      </select>
-    </div>
-    <div class="mf"><label class="ml">Quantité</label>
-      <input id="pd-qty" type="number" min="1" class="inp" placeholder="0" style="width:120px"/>
-    </div>`;
+  const html=`<div class="mf"><label class="ml">Employé</label><select id="pd-emp" class="inp fs" style="width:100%"><option value="">— Choisir un employé —</option>${empOpts}</select></div><div class="mf"><label class="ml">Produit</label><select id="pd-item" class="inp fs" style="width:100%"><option value="">— Choisir un produit —</option>${prodOpts}</select></div><div class="mf"><label class="ml">Quantité</label><input id="pd-qty" type="number" min="1" class="inp" placeholder="0" style="width:120px"/></div>`;
   showModal('Ajouter une déclaration',html,async()=>{
-    const nomJeu=document.getElementById('pd-emp')?.value;
-    const item=document.getElementById('pd-item')?.value;
-    const qty=parseInt(document.getElementById('pd-qty')?.value)||0;
+    const nomJeu=document.getElementById('pd-emp')?.value,item=document.getElementById('pd-item')?.value,qty=parseInt(document.getElementById('pd-qty')?.value)||0;
     if(!nomJeu||!item||qty<=0){alert('Remplis tous les champs.');return;}
     const u=USERS.find(x=>x.nomJeu===nomJeu);
     await addDoc(collection(db,'productions'),{userId:u?.id||'admin',nomJeu,item,quantite:qty,timestamp:serverTimestamp()});
@@ -829,95 +755,24 @@ function renderProduits(){
     const rangsDispo=RANGS.filter(r=>(r.produitsIds||[]).includes(p.id));
     const rangsLabels=rangsDispo.map(r=>`<span class="bdg" style="background:${r.couleur||'#7c3aed'}22;color:${r.couleur||'#7c3aed'}">${r.nom}</span>`).join(' ');
     const prodActif=p.production===true;
-    return`<div class="card" style="position:relative;${prodActif?'border-color:rgba(16,185,129,.35)':''}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem">
-        <div style="font-family:Rajdhani,sans-serif;font-size:1rem;font-weight:700">${p.nom}</div>
-        <div style="display:flex;gap:.4rem">
-          <button class="btn-s" style="font-size:.72rem;padding:.3rem .6rem" onclick="window.editProduit(this)" data-id="${p.id}">✏️</button>
-          <button class="btn-d" style="font-size:.72rem;padding:.3rem .6rem" onclick="window.delProduit(this)" data-id="${p.id}" data-nom="${p.nom}">🗑️</button>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">
-        <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;user-select:none" onclick="window.toggleProduction('${p.id}',${!prodActif})">
-          <div style="width:34px;height:18px;border-radius:9px;background:${prodActif?'var(--green)':'rgba(255,255,255,.1)'};position:relative;transition:background .2s;flex-shrink:0">
-            <div style="width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:2px;left:${prodActif?'18px':'2px'};transition:left .2s"></div>
-          </div>
-          <span style="font-size:.75rem;color:${prodActif?'var(--green)':'var(--muted)'};font-weight:700">Production</span>
-        </label>
-        ${prodActif&&p.prix>0?`<span style="font-family:Rajdhani,sans-serif;font-size:1.1rem;font-weight:700;color:var(--teal)">${fmt(p.prix)}/u</span>`:''}
-      </div>
-      ${prodActif&&rangsDispo.length?`<div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.5rem">${rangsLabels}</div>`:''}
-      ${prodActif&&!rangsDispo.length?`<div style="font-size:.72rem;color:var(--red);margin-bottom:.5rem">⚠️ Aucun rang assigné</div>`:''}
-      <div style="margin-top:.25rem"><span class="bdg ${p.showInStock===false?'br':'bg'}">${p.showInStock===false?'🚫 Masqué stock':'✅ Stock visible'}</span></div>
-    </div>`;
+    return`<div class="card" style="position:relative;${prodActif?'border-color:rgba(16,185,129,.35)':''}"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem"><div style="font-family:Rajdhani,sans-serif;font-size:1rem;font-weight:700">${p.nom}</div><div style="display:flex;gap:.4rem"><button class="btn-s" style="font-size:.72rem;padding:.3rem .6rem" onclick="window.editProduit(this)" data-id="${p.id}">✏️</button><button class="btn-d" style="font-size:.72rem;padding:.3rem .6rem" onclick="window.delProduit(this)" data-id="${p.id}" data-nom="${p.nom}">🗑️</button></div></div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem"><label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;user-select:none" onclick="window.toggleProduction('${p.id}',${!prodActif})"><div style="width:34px;height:18px;border-radius:9px;background:${prodActif?'var(--green)':'rgba(255,255,255,.1)'};position:relative;transition:background .2s;flex-shrink:0"><div style="width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:2px;left:${prodActif?'18px':'2px'};transition:left .2s"></div></div><span style="font-size:.75rem;color:${prodActif?'var(--green)':'var(--muted)'};font-weight:700">Production</span></label>${prodActif&&p.prix>0?`<span style="font-family:Rajdhani,sans-serif;font-size:1.1rem;font-weight:700;color:var(--teal)">${fmt(p.prix)}/u</span>`:''}</div>${prodActif&&rangsDispo.length?`<div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.5rem">${rangsLabels}</div>`:''}${prodActif&&!rangsDispo.length?'<div style="font-size:.72rem;color:var(--red);margin-bottom:.5rem">⚠️ Aucun rang assigné</div>':''}<div style="margin-top:.25rem"><span class="bdg ${p.showInStock===false?'br':'bg'}">${p.showInStock===false?'🚫 Masqué stock':'✅ Stock visible'}</span></div></div>`;
   }).join('');
 }
 
-window.delProd=async function(id){
-  if(!confirm('Supprimer cette déclaration ?'))return;
-  await deleteDoc(doc(db,'productions',id));
-};
-
-window.toggleProduction=async function(id, enable){
-  const p=produits.find(x=>x.id===id);
-  if(!p)return;
-  if(enable){
-    // Ouvrir modal de config production
-    openProduitProductionModal(p);
-  } else {
-    // Désactiver production
-    await setDoc(doc(db,'produits',id),{production:false},{merge:true});
-    // Retirer ce produit de tous les rangs
-    for(const r of RANGS){
-      const pids=(r.produitsIds||[]).filter(pid=>pid!==id);
-      if(pids.length!==(r.produitsIds||[]).length){
-        await setDoc(doc(db,'rangs',r.id),{produitsIds:pids},{merge:true});
-      }
-    }
-  }
-};
-
+window.delProd=async function(id){if(!confirm('Supprimer cette déclaration ?'))return;await deleteDoc(doc(db,'productions',id));};
+window.toggleProduction=async function(id,enable){const p=produits.find(x=>x.id===id);if(!p)return;if(enable){openProduitProductionModal(p);}else{await setDoc(doc(db,'produits',id),{production:false},{merge:true});for(const r of RANGS){const pids=(r.produitsIds||[]).filter(pid=>pid!==id);if(pids.length!==(r.produitsIds||[]).length)await setDoc(doc(db,'rangs',r.id),{produitsIds:pids},{merge:true});}}};
 window.openProduitProductionModal=function(p){
-  const rangsOpts=RANGS.map(r=>`
-    <label class="ptog${(r.produitsIds||[]).includes(p.id)?' on':''}" id="prp_${r.id}" style="justify-content:space-between;cursor:pointer" onclick="window.tprp('${r.id}',!document.getElementById('prp_${r.id}')?.classList.contains('on'))">
-      <span style="display:flex;align-items:center;gap:.5rem">
-        <span style="width:10px;height:10px;border-radius:50%;background:${r.couleur||'#7c3aed'};display:inline-block"></span>
-        ${r.nom}
-      </span>
-      <div class="pd"></div>
-    </label>`).join('');
-  const html=`
-    <div style="margin-bottom:1rem;padding:.75rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:8px">
-      <div style="font-size:.72rem;color:var(--green);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:.4rem">💰 Bonus par unité déclarée</div>
-      <div style="display:flex;align-items:center;gap:.75rem">
-        <input id="pprod-prix" type="number" min="0" class="inp" value="${p.prix||0}" placeholder="0" style="width:120px"/>
-        <span style="font-size:.82rem;color:var(--muted)">$ par unité déclarée</span>
-      </div>
-      <div style="font-size:.72rem;color:var(--muted);margin-top:.4rem">Ajouté au salaire de l'employé à chaque déclaration</div>
-    </div>
-    <div class="mf">
-      <label class="ml">Rangs autorisés à déclarer</label>
-      ${rangsOpts.length?`<div style="display:flex;flex-direction:column;gap:.4rem;margin-top:.25rem">${rangsOpts}</div>`:'<p style="color:var(--muted);font-size:.82rem">Aucun rang créé</p>'}
-    </div>`;
+  const rangsOpts=RANGS.map(r=>`<label class="ptog${(r.produitsIds||[]).includes(p.id)?' on':''}" id="prp_${r.id}" style="justify-content:space-between;cursor:pointer" onclick="window.tprp('${r.id}',!document.getElementById('prp_${r.id}')?.classList.contains('on'))"><span style="display:flex;align-items:center;gap:.5rem"><span style="width:10px;height:10px;border-radius:50%;background:${r.couleur||'#7c3aed'};display:inline-block"></span>${r.nom}</span><div class="pd"></div></label>`).join('');
+  const html=`<div style="margin-bottom:1rem;padding:.75rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:8px"><div style="font-size:.72rem;color:var(--green);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:.4rem">💰 Bonus par unité déclarée</div><div style="display:flex;align-items:center;gap:.75rem"><input id="pprod-prix" type="number" min="0" class="inp" value="${p.prix||0}" placeholder="0" style="width:120px"/><span style="font-size:.82rem;color:var(--muted)">$ par unité déclarée</span></div><div style="font-size:.72rem;color:var(--muted);margin-top:.4rem">Ajouté au salaire de l'employé à chaque déclaration</div></div><div class="mf"><label class="ml">Rangs autorisés à déclarer</label>${rangsOpts.length?`<div style="display:flex;flex-direction:column;gap:.4rem;margin-top:.25rem">${rangsOpts}</div>`:'<p style="color:var(--muted);font-size:.82rem">Aucun rang créé</p>'}</div>`;
   showModal(`Production — ${p.nom}`,html,async()=>{
     const prix=parseInt(document.getElementById('pprod-prix')?.value)||0;
-    // Sauvegarder prix et activer production sur le produit
     await setDoc(doc(db,'produits',p.id),{prix,production:true},{merge:true});
-    // Mettre à jour les rangs sélectionnés
-    for(const r of RANGS){
-      const checked=document.getElementById('prp_'+r.id)?.classList.contains('on')||false;
-      const pids=r.produitsIds||[];
-      const already=pids.includes(p.id);
-      if(checked&&!already){
-        await setDoc(doc(db,'rangs',r.id),{produitsIds:[...pids,p.id]},{merge:true});
-      } else if(!checked&&already){
-        await setDoc(doc(db,'rangs',r.id),{produitsIds:pids.filter(x=>x!==p.id)},{merge:true});
-      }
-    }
+    for(const r of RANGS){const checked=document.getElementById('prp_'+r.id)?.classList.contains('on')||false;const pids=r.produitsIds||[];const already=pids.includes(p.id);if(checked&&!already)await setDoc(doc(db,'rangs',r.id),{produitsIds:[...pids,p.id]},{merge:true});else if(!checked&&already)await setDoc(doc(db,'rangs',r.id),{produitsIds:pids.filter(x=>x!==p.id)},{merge:true});}
     hideModal();
   });
   window.tprp=(id,checked)=>{const el=document.getElementById('prp_'+id);if(el)el.classList.toggle('on',checked);};
 };
+
 (function(){const b=document.getElementById('btn-cp');if(b)b.addEventListener('click',()=>openProduitModal(null));})();
 window.editProduit=btn=>{const p=produits.find(x=>x.id===btn.dataset.id);if(p)openProduitModal(p);};
 window.delProduit=btn=>{showModal(`Supprimer "${btn.dataset.nom}" ?`,'<p style="color:var(--muted);font-size:.9rem">Ce produit sera retiré de tous les rangs.</p>',async()=>{await deleteDoc(doc(db,'produits',btn.dataset.id));hideModal();});};
@@ -940,18 +795,14 @@ const COLS=['#7c3aed','#10b981','#ef4444','#f59e0b','#6366f1','#14b8a6','#ec4899
 
 function renderRangs(){
   if(!RANGS.length){$('rangs-grid').innerHTML='<div class="empty"><div class="ei">⭐</div>Aucun rang créé</div>';return;}
-  $('rangs-grid').innerHTML=RANGS.map(r=>`<div class="rc"><div class="rch" style="background:${r.couleur||'#7c3aed'}18"><div class="rcn" style="color:${r.couleur||'#7c3aed'}">${r.nom||'Rang'}</div><span class="bdg" style="background:${r.couleur||'#7c3aed'}22;color:${r.couleur||'#7c3aed'}">${(r.objetsProduction||[]).length} obj.</span></div><div class="rcb">${r.salaireMin>0||r.salaireMax>0?`<div style="display:flex;gap:.75rem;margin-bottom:.5rem;font-size:.75rem"><span style="color:var(--muted)">Salaire :</span>${r.salaireMin>0?'<span style=\"color:var(--green)\">min '+Number(r.salaireMin).toLocaleString('fr-FR')+'$</span>':''}${r.salaireMax>0?' <span style=\"color:var(--red)\">max '+Number(r.salaireMax).toLocaleString('fr-FR')+'$</span>':''}</div>`:''}${Object.entries(PL).map(([k,l])=>`<div class="rp"><span>${r.permissions?.[k]?'✅':'❌'}</span><span>${l}</span></div>`).join('')}<div class="ract"><button class="btn-s" style="font-size:.74rem;padding:.38rem .75rem" onclick="window.editRang(this)" data-id="${r.id}">✏️ Modifier</button><button class="btn-d" style="font-size:.74rem;padding:.38rem .75rem" onclick="window.delRang(this)" data-id="${r.id}" data-nom="${r.nom}">🗑️</button></div></div></div>`).join('');
+  $('rangs-grid').innerHTML=RANGS.map(r=>`<div class="rc"><div class="rch" style="background:${r.couleur||'#7c3aed'}18"><div class="rcn" style="color:${r.couleur||'#7c3aed'}">${r.nom||'Rang'}</div><span class="bdg" style="background:${r.couleur||'#7c3aed'}22;color:${r.couleur||'#7c3aed'}">${(r.objetsProduction||[]).length} obj.</span></div><div class="rcb">${r.salaireMin>0||r.salaireMax>0?`<div style="display:flex;gap:.75rem;margin-bottom:.5rem;font-size:.75rem"><span style="color:var(--muted)">Salaire :</span>${r.salaireMin>0?'<span style="color:var(--green)">min '+Number(r.salaireMin).toLocaleString('fr-FR')+'$</span>':''}${r.salaireMax>0?' <span style="color:var(--red)">max '+Number(r.salaireMax).toLocaleString('fr-FR')+'$</span>':''}</div>`:''}${Object.entries(PL).map(([k,l])=>`<div class="rp"><span>${r.permissions?.[k]?'✅':'❌'}</span><span>${l}</span></div>`).join('')}<div class="ract"><button class="btn-s" style="font-size:.74rem;padding:.38rem .75rem" onclick="window.editRang(this)" data-id="${r.id}">✏️ Modifier</button><button class="btn-d" style="font-size:.74rem;padding:.38rem .75rem" onclick="window.delRang(this)" data-id="${r.id}" data-nom="${r.nom}">🗑️</button></div></div></div>`).join('');
 }
 $('btn-cr')?.addEventListener('click',()=>openRangModal(null));
 window.editRang=btn=>{const r=RANGS.find(x=>x.id===btn.dataset.id);if(r)openRangModal(r);};
 window.delRang=btn=>{showModal(`Supprimer "${btn.dataset.nom}" ?`,'<p style="color:var(--muted);font-size:.9rem">Cette action est irréversible.</p>',async()=>{await deleteDoc(doc(db,'rangs',btn.dataset.id));hideModal();});};
 function openRangModal(r){
   let sc=r?.couleur||COLS[0];
-  const html=`<div class="mf"><label class="ml">Nom du rang</label><input id="rn" type="text" class="inp" value="${r?.nom||''}" placeholder="Ex: Vendeur Confirmé"/></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem" class="mf">
-      <div><label class="ml">Salaire minimum</label><input id="rsal-min" type="number" min="0" class="inp" value="${r?.salaireMin||0}" placeholder="0"/><div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">0 = pas de minimum</div></div>
-      <div><label class="ml">Salaire maximum</label><input id="rsal-max" type="number" min="0" class="inp" value="${r?.salaireMax||0}" placeholder="0"/><div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">0 = pas de plafond</div></div>
-    </div><div class="mf"><label class="ml">Couleur</label><div class="cpr">${COLS.map(c=>`<div class="cd${c===sc?' sel':''}" style="background:${c}" data-c="${c}" onclick="window.pc('${c}')"></div>`).join('')}</div></div><div class="mf"><label class="ml">Onglets visibles</label><div class="pgrid">${Object.entries(PL).map(([k,l])=>`<label class="ptog${r?.permissions?.[k]?' on':''}" id="pt_${k}"><input type="checkbox"${r?.permissions?.[k]?' checked':''} onchange="window.tp('${k}',this.checked)"><div class="pd"></div><span class="ptl">${l}</span></label>`).join('')}</div></div><div class="mf"><label class="ml">Produits déclarables</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-top:.25rem">${produits.length?produits.map(p=>`<label class="ptog${(r?.produitsIds||[]).includes(p.id)?' on':''}" id="pp_${p.id}"><span>${p.nom}</span><input type="checkbox"${(r?.produitsIds||[]).includes(p.id)?' checked':''} onchange="window.tpp('${p.id}',this.checked)"></label>`).join(''):'<p style="color:var(--muted);font-size:.82rem">Aucun produit créé</p>'}</div></div>`;
+  const html=`<div class="mf"><label class="ml">Nom du rang</label><input id="rn" type="text" class="inp" value="${r?.nom||''}" placeholder="Ex: Vendeur Confirmé"/></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem" class="mf"><div><label class="ml">Salaire minimum</label><input id="rsal-min" type="number" min="0" class="inp" value="${r?.salaireMin||0}" placeholder="0"/><div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">0 = pas de minimum</div></div><div><label class="ml">Salaire maximum</label><input id="rsal-max" type="number" min="0" class="inp" value="${r?.salaireMax||0}" placeholder="0"/><div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">0 = pas de plafond</div></div></div><div class="mf"><label class="ml">Couleur</label><div class="cpr">${COLS.map(c=>`<div class="cd${c===sc?' sel':''}" style="background:${c}" data-c="${c}" onclick="window.pc('${c}')"></div>`).join('')}</div></div><div class="mf"><label class="ml">Onglets visibles</label><div class="pgrid">${Object.entries(PL).map(([k,l])=>`<label class="ptog${r?.permissions?.[k]?' on':''}" id="pt_${k}"><input type="checkbox"${r?.permissions?.[k]?' checked':''} onchange="window.tp('${k}',this.checked)"><div class="pd"></div><span class="ptl">${l}</span></label>`).join('')}</div></div><div class="mf"><label class="ml">Produits déclarables</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-top:.25rem">${produits.length?produits.map(p=>`<label class="ptog${(r?.produitsIds||[]).includes(p.id)?' on':''}" id="pp_${p.id}"><span>${p.nom}</span><input type="checkbox"${(r?.produitsIds||[]).includes(p.id)?' checked':''} onchange="window.tpp('${p.id}',this.checked)"></label>`).join(''):'<p style="color:var(--muted);font-size:.82rem">Aucun produit créé</p>'}</div></div>`;
   showModal(r?`Modifier "${r.nom}"`:'Créer un rang',html,async()=>{
     const nom=$('rn').value.trim();if(!nom){alert('Nom obligatoire');return;}
     const ps={};Object.keys(PL).forEach(k=>{ps[k]=$('pt_'+k)?.classList.contains('on')||false;});
@@ -972,25 +823,20 @@ function renderUsers(){
   $('users-list').innerHTML=USERS.map(u=>{
     const rg=RANGS.find(r=>r.id===u.rangId);
     const mdpDisplay=u.mdp?`<span style="font-size:.72rem;color:var(--muted);font-family:monospace;cursor:pointer" onclick="this.textContent=this.textContent==='🔑 Voir'?'${u.mdp||'—'}':'🔑 Voir'">🔑 Voir</span>`:'<span style="font-size:.72rem;color:var(--dim)">—</span>';
-    return`<div class="urow"><div class="urn">${u.nomJeu||'—'}</div><div class="ure">${u.email||'—'}</div><div style="flex:.8;display:flex;align-items:center;gap:.5rem">${mdpDisplay}</div><div style="flex:1">${u.role==='admin'?'<span class="bdg bgd">👑 Admin</span>':rg?`<span class="bdg" style="background:${rg.couleur}22;color:${rg.couleur}">${rg.nom}</span>`:'<span class="bdg bgr">Sans rang</span>'}</div><div class="ura">${u.role!=='admin'?`<button class="btn-s" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.resetMdp(this)" data-id="${u.id}" data-email="${u.email||''}" title="Réinitialiser">🔄</button><button class="btn-s" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.editUser(this)" data-id="${u.id}">✏️</button><button class="btn-d" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.delUser(this)" data-id="${u.id}" data-nom="${u.nomJeu||''}"  >🗑️</button>`:''}</div></div>`;
+    return`<div class="urow"><div class="urn">${u.nomJeu||'—'}</div><div class="ure">${u.email||'—'}</div><div style="flex:.8;display:flex;align-items:center;gap:.5rem">${mdpDisplay}</div><div style="flex:1">${u.role==='admin'?'<span class="bdg bgd">👑 Admin</span>':rg?`<span class="bdg" style="background:${rg.couleur}22;color:${rg.couleur}">${rg.nom}</span>`:'<span class="bdg bgr">Sans rang</span>'}</div><div class="ura">${u.role!=='admin'?`<button class="btn-s" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.resetMdp(this)" data-id="${u.id}" data-email="${u.email||''}" title="Réinitialiser">🔄</button><button class="btn-s" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.editUser(this)" data-id="${u.id}">✏️</button><button class="btn-d" style="font-size:.73rem;padding:.33rem .65rem" onclick="window.delUser(this)" data-id="${u.id}" data-nom="${u.nomJeu||''}">🗑️</button>`:''}</div></div>`;
   }).join('');
 }
 $('btn-cu')?.addEventListener('click',()=>openUserModal(null));
 window.editUser=btn=>{const u=USERS.find(x=>x.id===btn.dataset.id);if(u)openUserModal(u);};
 window.delUser=btn=>{showModal(`Supprimer "${btn.dataset.nom}" ?`,'<p style="color:var(--muted);font-size:.9rem">Supprimez aussi le compte depuis Firebase Auth.</p>',async()=>{await deleteDoc(doc(db,'users',btn.dataset.id));hideModal();});};
 function openUserModal(u){
-  const opts=RANGS.map(r=>`<option value="${r.id}"${u?.rangId===r.id?' selected':''  }>${r.nom}</option>`).join('');
+  const opts=RANGS.map(r=>`<option value="${r.id}"${u?.rangId===r.id?' selected':''}>${r.nom}</option>`).join('');
   const html=`<div class="mf"><label class="ml">Nom en jeu</label><input id="un" type="text" class="inp" value="${u?.nomJeu||''}" placeholder="Ex: Kayla Moreno"/></div>${!u?'<div class="mf"><label class="ml">Email</label><input id="ue" type="email" class="inp" placeholder="email@exemple.com"/></div><div class="mf"><label class="ml">Mot de passe</label><input id="up" type="password" class="inp" placeholder="Min. 6 caractères"/></div>':''}<div class="mf"><label class="ml">Rang</label><select id="ur" class="inp fs" style="width:100%"><option value="">— Choisir un rang —</option>${opts}</select></div>`;
   showModal(u?`Modifier ${u.nomJeu}`:'Créer un compte',html,async()=>{
     const nomJeu=$('un').value.trim(),rangId=$('ur').value;
     if(!nomJeu){alert('Nom en jeu obligatoire');return;}
     if(u){await setDoc(doc(db,'users',u.id),{nomJeu,rangId},{merge:true});}
-    else{
-      const email=$('ue').value.trim(),pass=$('up').value;
-      if(!email||!pass){alert('Email et mot de passe obligatoires');return;}
-      try{const cr=await createUserWithEmailAndPassword(secAuth,email,pass);await signOut(secAuth);await setDoc(doc(db,'users',cr.user.uid),{email,nomJeu,rangId,role:'user',mdp:pass,createdAt:serverTimestamp()});}
-      catch(e){alert('Erreur : '+e.message);return;}
-    }
+    else{const email=$('ue').value.trim(),pass=$('up').value;if(!email||!pass){alert('Email et mot de passe obligatoires');return;}try{const cr=await createUserWithEmailAndPassword(secAuth,email,pass);await signOut(secAuth);await setDoc(doc(db,'users',cr.user.uid),{email,nomJeu,rangId,role:'user',mdp:pass,createdAt:serverTimestamp()});}catch(e){alert('Erreur : '+e.message);return;}}
     hideModal();
   });
 }
@@ -1000,36 +846,30 @@ function renderVendorTableau(){
   const nom=uProf.nomJeu||'';
   const mf=weekFAC().filter(f=>f.emetteur===nom&&f.status==='payee');
   const ca=mf.reduce((s,f)=>s+(f.montant||0),0);
-  // Bonus production
-  const prodBonus=weekPROD().filter(p=>p.nomJeu===nom).reduce((s,p)=>{
-    const prodDef=produits.find(x=>x.nom===p.item||x.igNom===p.item);
-    return s+(prodDef?.prix||0)*(p.quantite||0);
-  },0);
-  // Appliquer min/max du rang
-  const _uRangData=uRang;
+  const prodBonus=weekPROD().filter(p=>p.nomJeu===nom).reduce((s,p)=>{const prodDef=produits.find(x=>x.nom===p.item||x.igNom===p.item);return s+(prodDef?.prix||0)*(p.quantite||0);},0);
   let sal=Math.round(ca*.3)+prodBonus;
-  if(_uRangData?.salaireMin>0&&sal<_uRangData.salaireMin)sal=_uRangData.salaireMin;
-  if(_uRangData?.salaireMax>0&&sal>_uRangData.salaireMax)sal=_uRangData.salaireMax;
+  if(uRang?.salaireMin>0&&sal<uRang.salaireMin)sal=uRang.salaireMin;
+  if(uRang?.salaireMax>0&&sal>uRang.salaireMax)sal=uRang.salaireMax;
   const ms=weekSVC().filter(s=>s.employeNom===nom&&s.duree);
   const tm=ms.reduce((s,x)=>s+(x.duree||0),0);
   const allFac=weekFAC().filter(f=>f.emetteur===nom);
   $('vtca').textContent=fmt(ca);$('vtcan').textContent=`${mf.length} facture${mf.length>1?'s':''} payée${mf.length>1?'s':''}`;
   $('vtsal').textContent=fmt(sal);$('vthrs').textContent=fmtDur(tm);$('vtmin').textContent=`${ms.length} session${ms.length>1?'s':''}`;
   $('vtnbf').textContent=allFac.length;$('vtnbfp').textContent=`${mf.length} payée${mf.length>1?'s':''}`;
-  $('vtfac').innerHTML=allFac.slice(0,15).map(f=>`<tr><td class="tm">${f.creeLe||fmtD(f.timestamp)}</td><td class="tm">${f.destinataire||'—'}</td><td class="tmono" style="color:var(--green)">${fmt(f.montant)}</td><td class="tm" style="max-width:140px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${f.raison||'—'}</td><td><span class="bdg ${f.status==='payee'?'bg':'bgd'}">${f.status==='payee'?'✓ Payée':'⏳ En attente'}</span></td></tr>`).join('')|| '<tr><td colspan="5"><div class="empty"><div class="ei">🧾</div>Aucune facture</div></td></tr>';
+  $('vtfac').innerHTML=allFac.slice(0,15).map(f=>`<tr><td class="tm">${f.creeLe||fmtD(f.timestamp)}</td><td class="tm">${f.destinataire||'—'}</td><td class="tmono" style="color:var(--green)">${fmt(f.montant)}</td><td class="tm" style="max-width:140px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${f.raison||'—'}</td><td><span class="bdg ${f.status==='payee'?'bg':'bgd'}">${f.status==='payee'?'✓ Payée':'⏳ En attente'}</span></td></tr>`).join('')||'<tr><td colspan="5"><div class="empty"><div class="ei">🧾</div>Aucune facture</div></td></tr>';
 }
 function renderMyServices(){
   if(!uProf||uProf.role==='admin')return;
   const ms=weekSVC().filter(s=>s.employeNom===uProf.nomJeu&&s.duree);
   const tm=ms.reduce((s,x)=>s+(x.duree||0),0);
   $('svc-total').textContent=fmtDur(tm);$('svc-nb').textContent=ms.length;
-  $('svc-body').innerHTML=ms.map(s=>`<tr><td class="tm">${fmtD(s.debut)}</td><td class="tm">${fmtD(s.fin)||'En cours'}</td><td class="tmono" style="color:var(--teal)">${fmtDur(s.duree)}</td></tr>`).join('')|| '<tr><td colspan="3"><div class="empty"><div class="ei">⏱️</div>Aucun service</div></td></tr>';
+  $('svc-body').innerHTML=ms.map(s=>`<tr><td class="tm">${fmtD(s.debut)}</td><td class="tm">${fmtD(s.fin)||'En cours'}</td><td class="tmono" style="color:var(--teal)">${fmtDur(s.duree)}</td></tr>`).join('')||'<tr><td colspan="3"><div class="empty"><div class="ei">⏱️</div>Aucun service</div></td></tr>';
 }
 function buildProdDropdown(){
   const pids=uRang?.produitsIds||[];const items=produits.filter(p=>pids.includes(p.id));
   const sel=$('prod-item');if(!sel)return;
   sel.innerHTML='<option value="">— Choisir un objet —</option>';
-  items.forEach(i=>{const o=document.createElement('option');o.value=i.nom||i;o.dataset.prix=i.prix||0;o.textContent=(i.nom||i)+(i.prix>0?' (+'+i.prix+'$)':''  );sel.appendChild(o);});
+  items.forEach(i=>{const o=document.createElement('option');o.value=i.nom||i;o.dataset.prix=i.prix||0;o.textContent=(i.nom||i)+(i.prix>0?' (+'+i.prix+'$)':'');sel.appendChild(o);});
   if(!items.length)sel.innerHTML='<option value="">Aucun objet défini pour votre rang</option>';
 }
 $('prod-submit')?.addEventListener('click',async()=>{
@@ -1044,7 +884,7 @@ $('prod-submit')?.addEventListener('click',async()=>{
 function renderMyProd(){
   if(!uProf||uProf.role==='admin')return;
   const d=weekPROD().filter(p=>p.userId===aUser?.uid);
-  $('myprb').innerHTML=d.map(p=>`<tr><td class="tm">${fmtD(p.timestamp)}</td><td style="font-weight:600">${p.item||'—'}</td><td class="tmono" style="color:var(--pl)">${p.quantite||0}</td></tr>`).join('')|| '<tr><td colspan="3"><div class="empty"><div class="ei">🏭</div>Aucune déclaration</div></td></tr>';
+  $('myprb').innerHTML=d.map(p=>`<tr><td class="tm">${fmtD(p.timestamp)}</td><td style="font-weight:600">${p.item||'—'}</td><td class="tmono" style="color:var(--pl)">${p.quantite||0}</td></tr>`).join('')||'<tr><td colspan="3"><div class="empty"><div class="ei">🏭</div>Aucune déclaration</div></td></tr>';
 }
 
 window.toggleCorr=function(itemName){document.getElementById('cf-'+itemName.replace(/[^a-zA-Z0-9]/g,'-'))?.classList.toggle('open');};
@@ -1069,7 +909,7 @@ document.getElementById('btn-sync')?.addEventListener('click',async()=>{
     try{const cr=await createUserWithEmailAndPassword(secAuth,email,'LTD2026!');await signOut(secAuth);await setDoc(doc(db,'users',cr.user.uid),{email,nomJeu:nom,rangId:'',role:'user',mdp:'LTD2026!',createdAt:serverTimestamp()});created++;}
     catch(e){try{const e2=slug+Math.floor(Math.random()*900+100)+'@ltd.com',cr2=await createUserWithEmailAndPassword(secAuth,e2,'LTD2026!');await signOut(secAuth);await setDoc(doc(db,'users',cr2.user.uid),{email:e2,nomJeu:nom,rangId:'',role:'user',createdAt:serverTimestamp()});created++;}catch{errors.push(nom);}}
   }
-  alert(created+' compte'+(created>1?'s':'')+' créé'+(created>1?'s':'')+' !\nMdp : LTD2026!'+(errors.length?'\nÉchecs : '+errors.join(', '):''  ));
+  alert(created+' compte'+(created>1?'s':'')+' créé'+(created>1?'s':'')+' !\nMdp : LTD2026!'+(errors.length?'\nÉchecs : '+errors.join(', '):''));
 });
 
 window.resetMdp=async function(btn){
@@ -1091,171 +931,62 @@ document.getElementById('btn-mdp-save')?.addEventListener('click',async()=>{
 
 // ════ IMPÔTS ════
 function renderImpots(){
-  const facW=weekFAC();
-  const txW=weekTX();
-  // Numéro de semaine courante
-  const {start}=getWeekBounds(selectedWeekOffset);
-  const numSem=getISOWeek(start);
-
-  // CA auto
+  const facW=weekFAC(),txW=weekTX();
+  const{start}=getWeekBounds(selectedWeekOffset);const numSem=getISOWeek(start);
   const ca=facW.filter(f=>f.status==='payee').reduce((s,f)=>s+(f.montant||0),0);
-
-  // Salaires auto (30% CA par employé)
-  const salTotal=Object.values(
-    facW.filter(f=>f.status==='payee').reduce((m,f)=>{
-      const n=f.emetteur||'Inconnu';
-      if(n==='Inconnu')return m;
-      if(!m[n])m[n]=0;
-      m[n]+=f.montant||0;
-      return m;
-    },{})
-  ).reduce((s,ca)=>s+Math.round(ca*0.3),0);
-
-  // Dépenses brutes (sorties)
+  const salTotal=Object.values(facW.filter(f=>f.status==='payee').reduce((m,f)=>{const n=f.emetteur||'Inconnu';if(n==='Inconnu')return m;if(!m[n])m[n]=0;m[n]+=f.montant||0;return m;},{})).reduce((s,ca)=>s+Math.round(ca*0.3),0);
   const depBrut=txW.filter(t=>t.type==='sortie').reduce((s,t)=>s+(t.montant||0),0);
-
-  // Prime mensuelle visible ? (numSem - 1) % 4 === 0
   const isPrimeSem=(numSem-1)%4===0;
   const nextPrimeSem=isPrimeSem?numSem:numSem+(4-((numSem-1)%4));
-  const primeMensCard=document.getElementById('prime-mens-card');
-  const primeMensHidden=document.getElementById('prime-mens-hidden');
-  const primeMensBadge=document.getElementById('prime-mens-badge');
-  const primeMensNextLbl=document.getElementById('prime-mens-next-lbl');
-  if(primeMensCard)primeMensCard.style.display=isPrimeSem?'block':'none';
-  if(primeMensHidden)primeMensHidden.style.display=isPrimeSem?'none':'block';
-  if(primeMensBadge)primeMensBadge.textContent='S'+numSem;
-  if(primeMensNextLbl)primeMensNextLbl.textContent='Prochaine prime : S'+nextPrimeSem;
-
+  const primeMensCard=document.getElementById('prime-mens-card');const primeMensHidden=document.getElementById('prime-mens-hidden');const primeMensBadge=document.getElementById('prime-mens-badge');const primeMensNextLbl=document.getElementById('prime-mens-next-lbl');
+  if(primeMensCard)primeMensCard.style.display=isPrimeSem?'block':'none';if(primeMensHidden)primeMensHidden.style.display=isPrimeSem?'none':'block';if(primeMensBadge)primeMensBadge.textContent='S'+numSem;if(primeMensNextLbl)primeMensNextLbl.textContent='Prochaine prime : S'+nextPrimeSem;
   window._imp={ca,salTotal,depBrut,isPrimeSem};
-
-  const f=v=>Number(Math.round(v)).toLocaleString('fr-FR')+'$';
-  const el=id=>document.getElementById(id);
-
-  // Préremplir nbEmp si vide
-  const nbEmpInput=el('imp-nb-emp');
-  if(nbEmpInput&&!nbEmpInput.value)nbEmpInput.value=USERS.length||'';
-  if(el('imp-ca'))el('imp-ca').textContent=f(ca);
-  if(el('imp-sal'))el('imp-sal').textContent=f(salTotal);
-  if(el('imp-dep-brut'))el('imp-dep-brut').textContent=f(depBrut);
-
+  const f=v=>Number(Math.round(v)).toLocaleString('fr-FR')+'$';const el=id=>document.getElementById(id);
+  const nbEmpInput=el('imp-nb-emp');if(nbEmpInput&&!nbEmpInput.value)nbEmpInput.value=USERS.length||'';
+  if(el('imp-ca'))el('imp-ca').textContent=f(ca);if(el('imp-sal'))el('imp-sal').textContent=f(salTotal);if(el('imp-dep-brut'))el('imp-dep-brut').textContent=f(depBrut);
   calcImpots();
 }
 
 window.calcImpots=function(){
   if(!window._imp)return;
-  const {ca,salTotal,depBrut,isPrimeSem}=window._imp;
+  const{ca,salTotal,depBrut,isPrimeSem}=window._imp;
   const nbEmp=parseInt(document.getElementById('imp-nb-emp')?.value)||USERS.length||1;
   const nourr=750*nbEmp;
-  // Update nourriture display
-  const _nEl=document.getElementById('imp-nourr');
-  if(_nEl)_nEl.textContent=Number(nourr).toLocaleString('fr-FR')+'$ ('+nbEmp+' × 750$)';
-  // Update prime hebdo detail
-  const primeParPers=Math.round(ca*0.005);
-  const nbBenef=Math.ceil(nbEmp*0.3);
-  const primeCalcAuto=primeParPers*nbBenef;
-  const _pdEl=document.getElementById('imp-prime-detail');
-  if(_pdEl)_pdEl.textContent=Number(ca).toLocaleString('fr-FR')+'$ × 0.5% = '+Number(primeParPers).toLocaleString('fr-FR')+'$/emp × ⌈'+nbEmp+' × 30%⌉ = '+nbBenef+' emp → auto : '+Number(primeCalcAuto).toLocaleString('fr-FR')+'$';
-  const f=v=>Number(Math.round(v)).toLocaleString('fr-FR')+'$';
-  const el=id=>document.getElementById(id);
-
+  const _nEl=document.getElementById('imp-nourr');if(_nEl)_nEl.textContent=Number(nourr).toLocaleString('fr-FR')+'$ ('+nbEmp+' × 750$)';
+  const primeParPers=Math.round(ca*0.005);const nbBenef=Math.ceil(nbEmp*0.3);const primeCalcAuto=primeParPers*nbBenef;
+  const _pdEl=document.getElementById('imp-prime-detail');if(_pdEl)_pdEl.textContent=Number(ca).toLocaleString('fr-FR')+'$ × 0.5% = '+Number(primeParPers).toLocaleString('fr-FR')+'$/emp × ⌈'+nbEmp+' × 30%⌉ = '+nbBenef+' emp → auto : '+Number(primeCalcAuto).toLocaleString('fr-FR')+'$';
+  const f=v=>Number(Math.round(v)).toLocaleString('fr-FR')+'$';const el=id=>document.getElementById(id);
   const locations=12950;
-  const autresRev=parseInt(el('imp-autres-rev')?.value)||0;
-  const primeHebdo=parseInt(el('imp-prime-screen')?.value)||0;
-  const fraisVeh=parseInt(el('imp-frais-veh')?.value)||0;
-  const achatsVeh=parseInt(el('imp-achats-veh')?.value)||0;
-  const cautionRem=parseInt(el('imp-caution-rem')?.value)||0;
-  const dons=parseInt(el('imp-dons')?.value)||0;
-  // Prime mensuelle saisie (seulement si semaine prime)
-  const primeMens=isPrimeSem?(parseInt(el('imp-ben-cumul')?.value)||0):0;
-  // Affichage prime mensuelle dans déductibles
+  const autresRev=parseInt(el('imp-autres-rev')?.value)||0;const primeHebdo=parseInt(el('imp-prime-screen')?.value)||0;const fraisVeh=parseInt(el('imp-frais-veh')?.value)||0;const achatsVeh=parseInt(el('imp-achats-veh')?.value)||0;const cautionRem=parseInt(el('imp-caution-rem')?.value)||0;const dons=parseInt(el('imp-dons')?.value)||0;
   let primeMensVal=0;
-  if(isPrimeSem&&primeMens>0){
-    let pct=0,max=0;
-    if(primeMens<=150000){pct=0.30;max=45000;}
-    else if(primeMens<=300000){pct=0.17;max=51000;}
-    else if(primeMens<=600000){pct=0.10;max=60000;}
-    else if(primeMens<=900000){pct=0.08;max=72000;}
-    else{pct=0.065;max=91000;}
-    primeMensVal=Math.min(Math.round(primeMens*pct),max);
-  }
+  if(isPrimeSem){const primeMens=parseInt(el('imp-ben-cumul')?.value)||0;if(primeMens>0){let pct=0,max=0;if(primeMens<=150000){pct=0.30;max=45000;}else if(primeMens<=300000){pct=0.17;max=51000;}else if(primeMens<=600000){pct=0.10;max=60000;}else if(primeMens<=900000){pct=0.08;max=72000;}else{pct=0.065;max=91000;}primeMensVal=Math.min(Math.round(primeMens*pct),max);}}
   if(el('imp-prime-mens-display'))el('imp-prime-mens-display').textContent=isPrimeSem?f(primeMensVal):'0$';
-
-  // Matières premières nettes
-  const mpNet=Math.max(0,depBrut-nourr-locations-fraisVeh-achatsVeh-cautionRem-dons);
-  if(el('imp-mp-net'))el('imp-mp-net').textContent=f(mpNet);
-
-  // Total revenus
-  const totalRev=ca+autresRev;
-
-  // Total déductibles
-  const totalDed=salTotal+primeHebdo+primeMensVal+mpNet+nourr+locations+fraisVeh+achatsVeh+cautionRem+dons;
-
-  // Base imposable
-  const benImp=totalRev-totalDed;
-
-  // Charges non déductibles
-  const locNded=parseInt(el('imp-loc-nded')?.value)||0;
-  const vehNded=parseInt(el('imp-veh-nded')?.value)||0;
-  const autresNded=parseInt(el('imp-autres-nded')?.value)||0;
-  const totalNded=locNded+vehNded+autresNded;
-
-  // Impôt : taux flat de la tranche atteinte sur tout le bénéfice imposable
-  const TRANCHES=[
-    {label:'T0 (0%)',min:0,max:10000,taux:0},
-    {label:'T1 (10%)',min:10001,max:50000,taux:0.10},
-    {label:'T2 (19%)',min:50001,max:100000,taux:0.19},
-    {label:'T3 (28%)',min:100001,max:250000,taux:0.28},
-    {label:'T4 (36%)',min:250001,max:500000,taux:0.36},
-    {label:'T5 (46%)',min:500001,max:Infinity,taux:0.46}
-  ];
-  const base=Math.max(0,benImp);
-  // Tranche déterminée par le CA, impôt appliqué sur la base imposable
-  let tauxApplique=0,trancheLabel='T0 (0%)';
+  const mpNet=Math.max(0,depBrut-nourr-locations-fraisVeh-achatsVeh-cautionRem-dons);if(el('imp-mp-net'))el('imp-mp-net').textContent=f(mpNet);
+  const totalRev=ca+autresRev;const totalDed=salTotal+primeHebdo+primeMensVal+mpNet+nourr+locations+fraisVeh+achatsVeh+cautionRem+dons;const benImp=totalRev-totalDed;
+  const locNded=parseInt(el('imp-loc-nded')?.value)||0;const vehNded=parseInt(el('imp-veh-nded')?.value)||0;const autresNded=parseInt(el('imp-autres-nded')?.value)||0;const totalNded=locNded+vehNded+autresNded;
+  const TRANCHES=[{label:'T0 (0%)',min:0,max:10000,taux:0},{label:'T1 (10%)',min:10001,max:50000,taux:0.10},{label:'T2 (19%)',min:50001,max:100000,taux:0.19},{label:'T3 (28%)',min:100001,max:250000,taux:0.28},{label:'T4 (36%)',min:250001,max:500000,taux:0.36},{label:'T5 (46%)',min:500001,max:Infinity,taux:0.46}];
+  const base=Math.max(0,benImp);let tauxApplique=0,trancheLabel='T0 (0%)';
   for(const t of TRANCHES){if(totalRev>=t.min){tauxApplique=t.taux;trancheLabel=t.label;}}
   const impots=Math.round(base*tauxApplique);
-  let tranchesHtml=TRANCHES.map(t=>{
-    const active=t.label===trancheLabel;
-    return`<div style="display:flex;justify-content:space-between;padding:.2rem .4rem;border-bottom:1px solid rgba(120,75,220,.07);${active?'background:rgba(239,68,68,.1);border-radius:4px;':''}"><span style="color:${active?'var(--text)':'var(--dim)'}">${t.label}${active?' ◀':''}</span><span style="font-family:Rajdhani,sans-serif;font-weight:700;color:${active?'var(--red)':'var(--dim)'}">${active&&impots>0?f(impots):'—'}</span></div>`;
-  }).join('');
+  let tranchesHtml=TRANCHES.map(t=>{const active=t.label===trancheLabel;return`<div style="display:flex;justify-content:space-between;padding:.2rem .4rem;border-bottom:1px solid rgba(120,75,220,.07);${active?'background:rgba(239,68,68,.1);border-radius:4px;':''}"><span style="color:${active?'var(--text)':'var(--dim)'}">${t.label}${active?' ◀':''}</span><span style="font-family:Rajdhani,sans-serif;font-weight:700;color:${active?'var(--red)':'var(--dim)'}">${active&&impots>0?f(impots):'—'}</span></div>`;}).join('');
   if(base<=0)tranchesHtml='<span style="color:var(--muted)">Bénéfice nul ou négatif</span>';
-
-  // Net après impôt
   const netApresImpots=benImp-impots-totalNded;
-
-  if(el('rec-ca'))el('rec-ca').textContent=f(totalRev);
-  if(el('rec-ded'))el('rec-ded').textContent=f(totalDed);
-  if(el('rec-nded'))el('rec-nded').textContent=f(totalNded);
-  if(el('rec-benimp'))el('rec-benimp').textContent=f(benImp);
-  if(el('rec-tranches'))el('rec-tranches').innerHTML=tranchesHtml;
-  if(el('rec-impots'))el('rec-impots').textContent=f(impots);
-  if(el('rec-net'))el('rec-net').textContent=f(netApresImpots);
+  if(el('rec-ca'))el('rec-ca').textContent=f(totalRev);if(el('rec-ded'))el('rec-ded').textContent=f(totalDed);if(el('rec-nded'))el('rec-nded').textContent=f(totalNded);if(el('rec-benimp'))el('rec-benimp').textContent=f(benImp);if(el('rec-tranches'))el('rec-tranches').innerHTML=tranchesHtml;if(el('rec-impots'))el('rec-impots').textContent=f(impots);if(el('rec-net'))el('rec-net').textContent=f(netApresImpots);
 };
 
 window.calcPrimeMensuelle=function(){
-  const benCumul=parseInt(document.getElementById('imp-ben-cumul')?.value)||0;
-  const el=id=>document.getElementById(id);
-  const f=v=>Number(Math.round(v)).toLocaleString('fr-FR')+'$';
+  const benCumul=parseInt(document.getElementById('imp-ben-cumul')?.value)||0;const el=id=>document.getElementById(id);const f=v=>Number(Math.round(v)).toLocaleString('fr-FR')+'$';
   if(benCumul<=0){if(el('prime-mensuelle-val'))el('prime-mensuelle-val').textContent='—';if(el('prime-mensuelle-tranche'))el('prime-mensuelle-tranche').textContent='';return;}
-  let pct=0,max=0,lbl='';
   if(benCumul<=5000){if(el('prime-mensuelle-val'))el('prime-mensuelle-val').textContent='—';if(el('prime-mensuelle-tranche'))el('prime-mensuelle-tranche').textContent='Sous le seuil minimum (5 000$)';return;}
-  else if(benCumul<=150000){pct=0.30;max=45000;lbl='Tranche 1 (5k-150k) : 30%';}
-  else if(benCumul<=300000){pct=0.17;max=51000;lbl='Tranche 2 (150-300k) : 17%';}
-  else if(benCumul<=600000){pct=0.10;max=60000;lbl='Tranche 3 (300-600k) : 10%';}
-  else if(benCumul<=900000){pct=0.08;max=72000;lbl='Tranche 4 (600-900k) : 8%';}
-  else{pct=0.065;max=91000;lbl='Tranche 5 (>900k) : 6,5%';}
+  let pct=0,max=0,lbl='';
+  if(benCumul<=150000){pct=0.30;max=45000;lbl='Tranche 1 (5k-150k) : 30%';}else if(benCumul<=300000){pct=0.17;max=51000;lbl='Tranche 2 (150-300k) : 17%';}else if(benCumul<=600000){pct=0.10;max=60000;lbl='Tranche 3 (300-600k) : 10%';}else if(benCumul<=900000){pct=0.08;max=72000;lbl='Tranche 4 (600-900k) : 8%';}else{pct=0.065;max=91000;lbl='Tranche 5 (>900k) : 6,5%';}
   const prime=Math.min(Math.round(benCumul*pct),max);
-  if(el('prime-mensuelle-val'))el('prime-mensuelle-val').textContent=f(prime);
-  if(el('prime-mensuelle-tranche'))el('prime-mensuelle-tranche').textContent=lbl+' — MAX '+f(max);
-  // Déclenche recalcul impôts pour inclure la prime mensuelle dans les déductibles
+  if(el('prime-mensuelle-val'))el('prime-mensuelle-val').textContent=f(prime);if(el('prime-mensuelle-tranche'))el('prime-mensuelle-tranche').textContent=lbl+' — MAX '+f(max);
   calcImpots();
 };
 
-window.closeService=async function(id, dureeMin){
-  if(!confirm('Clôturer ce service manuellement ?'))return;
-  await setDoc(doc(db,'services',id),{fin:serverTimestamp(),duree:dureeMin},{merge:true});
-};
+window.closeService=async function(id,dureeMin){if(!confirm('Clôturer ce service manuellement ?'))return;await setDoc(doc(db,'services',id),{fin:serverTimestamp(),duree:dureeMin},{merge:true});};
 
-// ════ AUTO-REFRESH SERVICE EN COURS ════
 setInterval(()=>{if(uProf?.role==='admin')renderEnService();},60000);
 
 function showModal(title,content,onSave){$('mtitle').textContent=title;$('mcontent').innerHTML=content;$('msave').onclick=onSave;$('modal-overlay').classList.add('open');}
