@@ -846,13 +846,14 @@ function renderSalaries(){
   const syncBanner=document.getElementById('sync-banner'),syncMsg=document.getElementById('sync-msg');
   if(syncBanner&&syncMsg){if(missing.length>0){syncBanner.style.display='flex';syncMsg.textContent=missing.length+' employé'+(missing.length>1?'s':'')+' détecté'+(missing.length>1?'s':'')+' sans compte : '+missing.join(', ');}else{syncBanner.style.display='none';}}
   $('sal-body').innerHTML=rows.length?rows.map(([n,d])=>{
-    const salBase=Math.round(d.ca*.3);const bonus=d.bonusProd||0;let salTotal=salBase+bonus;
+    const salBase=Math.round(d.ca*.3);const bonus=d.bonusProd||0;
     const u=USERS.find(u=>u.nomJeu===n);const rang=RANGS.find(r=>r.id===u?.rangId);
-    const salMin=rang?.salaireMin||0,salMax=rang?.salaireMax||0;const salAvantBorne=salTotal;
-    if(salMin>0&&salTotal<salMin)salTotal=salMin;if(salMax>0&&salTotal>salMax)salTotal=salMax;
-    const borneLbl=salTotal!==salAvantBorne?`<span style="font-size:.68rem;color:var(--gold);margin-left:.4rem">${salTotal>salAvantBorne?'▲ min':'▼ max'}</span>`:'';
-    return`<tr><td style="font-weight:700">${n}</td><td>${getRang(n)}</td><td class="tmono" style="color:var(--green)">${fmt(d.ca)}</td><td class="tmono" style="color:var(--gold)">${fmt(salTotal)}${bonus>0?`<span style="font-size:.7rem;color:var(--teal);margin-left:.4rem">(+${fmt(bonus)} prod)</span>`:''}${borneLbl}</td><td class="tmono" style="color:var(--teal)">${fmtDur(d.minSvc)}</td><td class="tmono" style="color:var(--pl)">${d.nbFac}</td></tr>`;
-  }).join(''):'<tr><td colspan="6"><div class="empty"><div class="ei">👥</div>Aucun employé actif cette semaine</div></td></tr>';
+    const salMin=rang?.salaireMin||0,salMax=rang?.salaireMax||0;
+    let salTotal=salMin+salBase+bonus;
+    if(salMax>0&&salTotal>salMax)salTotal=salMax;
+    const borneLbl=salMin>0?`<span style="font-size:.68rem;color:var(--vl);margin-left:.4rem">(+${fmt(salMin)} base)</span>`:(salMax>0&&salTotal===salMax?`<span style="font-size:.68rem;color:var(--r);margin-left:.4rem">▼ max</span>`:'');
+    return`<tr><td style="font-weight:700">${n}</td><td>${getRang(n)}</td><td class="tmono" style="color:var(--green)">${fmt(d.ca)}</td><td class="tmono" style="color:var(--gold)">${fmt(salTotal)}${bonus>0?`<span style="font-size:.7rem;color:var(--teal);margin-left:.4rem">(+${fmt(bonus)} prod)</span>`:''}${borneLbl}</td><td class="tmono" style="color:var(--teal)">${fmtDur(d.minSvc)}</td><td class="tmono" style="color:var(--pl)">${d.nbFac}</td><td>${(()=>{const _u=USERS.find(u=>u.nomJeu===n);const _uid=(_u&&_u.id)||'';const _note=(_u&&_u.note)||'';const _esc=_note.replace(/"/g,'&quot;');return '<div style="display:flex;align-items:center;gap:.35rem">'+'<span style="font-size:.72rem;color:var(--tx2);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+_esc+'">'+ (_note||'—') +'</span> '+'<button class="corr-btn" style="font-size:.68rem;flex-shrink:0" onclick="window.editNote(\''+ _uid +'\',\''+ n.replace(/'/g,'&#39;') +'\',\''+ _note.replace(/'/g,'&#39;') +'\')">✏️</button>'+'</div>';})()}</td></tr>`;
+  }).join(''):'<tr><td colspan="7"><div class="empty"><div class="ei">👥</div>Aucun employé actif cette semaine</div></td></tr>';
 }
 
 window.editNote=function(uid,nom,currentNote){
@@ -1008,9 +1009,9 @@ function renderVendorTableau(){
   const mf=weekFAC().filter(f=>f.emetteur===nom&&f.status==='payee');
   const ca=mf.reduce((s,f)=>s+(f.montant||0),0);
   const prodBonus=weekPROD().filter(p=>p.nomJeu===nom).reduce((s,p)=>{const prodDef=produits.find(x=>x.nom===p.item||x.igNom===p.item);return s+(prodDef?.prix||0)*(p.quantite||0);},0);
-  let sal=Math.round(ca*.3)+prodBonus;
-  if(uRang?.salaireMin>0&&sal<uRang.salaireMin)sal=uRang.salaireMin;
-  if(uRang?.salaireMax>0&&sal>uRang.salaireMax)sal=uRang.salaireMax;
+  const _salMin=uRang?.salaireMin||0,_salMax=uRang?.salaireMax||0;
+  let sal=_salMin+Math.round(ca*.3)+prodBonus;
+  if(_salMax>0&&sal>_salMax)sal=_salMax;
   const ms=weekSVC().filter(s=>s.employeNom===nom&&s.duree);
   const tm=ms.reduce((s,x)=>s+(x.duree||0),0);
   const allFac=weekFAC().filter(f=>f.emetteur===nom);
