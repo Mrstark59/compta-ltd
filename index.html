@@ -435,7 +435,7 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
           <input type="text" id="ffac-s" class="fi" placeholder="🔍  Vendeur ou raison…"/>
           <select id="ffac-st" class="fs"><option value="">Tous statuts</option><option value="payee">Payées</option><option value="en_attente">En attente</option></select>
         </div>
-        <div class="card"><div class="tw"><table><thead><tr><th>Date</th><th>Vendeur</th><th>Destinataire</th><th>Montant</th><th>Raison</th><th>Statut</th><th>Paiement</th></tr></thead><tbody id="fac-body"></tbody></table></div><div id="fac-total" style="margin-top:.65rem;font-size:.72rem;color:var(--tx2);text-align:right"></div></div>
+        <div class="card"><div class="tw"><table><thead><tr><th>Date</th><th>Vendeur</th><th>Destinataire</th><th>Montant</th><th>Raison</th><th>Statut</th><th>Paiement</th><th>CA</th></tr></thead><tbody id="fac-body"></tbody></table></div><div id="fac-total" style="margin-top:.65rem;font-size:.72rem;color:var(--tx2);text-align:right"></div></div>
       </section>
 
       <!-- STATIONS -->
@@ -805,6 +805,8 @@ function renderBilan(){
   const cl={vente_client:'#10b981',essence:'#f59e0b',autre:'#7c3aed',salaire:'#ef4444',approvisionnement:'#6366f1'};
   $('brep').innerHTML=Object.entries(cats).length?Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`<div class="rr"><div class="rl">${cLbl(c)}</div><div class="rbw"><div class="rb" style="width:${(v/mv*100).toFixed(1)}%;background:${cl[c]||'#7c3aed'}"></div></div><div class="rv" style="color:${cl[c]||'#7c3aed'}">${fmt(v)}</div></div>`).join(''):'<div class="empty"><div class="ei">📊</div>Aucune donnée pour cette semaine</div>';
   $('brecent').innerHTML=txW.slice(0,10).map(t=>`<tr><td class="tm">${fmtD(t.timestamp)}</td><td><span class="bdg ${t.type==='entree'?'bg':'br'}">${t.type==='entree'?'↑':'↓'} ${t.type==='entree'?'Entrée':'Sortie'}</span></td><td class="tmono" style="color:${t.type==='entree'?'var(--green)':'var(--red)'}">${fmt(t.montant)}</td><td><span class="bdg ${cBdg(t.categorie,t.type)}">${cLbl(t.categorie)}</span></td><td class="tm">${t.personne||'—'}</td></tr>`).join('')||'<tr><td colspan="5"><div class="empty"><div class="ei">💸</div>Aucune transaction cette semaine</div></td></tr>';
+  const _caObjB=weekFAC().filter(f=>f.status==='payee'&&!f.exclureCA).reduce((s,f)=>s+(f.montant||0),0);
+  if(typeof renderObjectif==='function')renderObjectif(_caObjB);
 }
 
 function renderTX(){
@@ -836,7 +838,7 @@ function renderStock(){
 function renderSalaries(){
   const facW=weekFAC(),svcW=weekSVC(),empMap={};
   for(const u of USERS){if(u.role==='admin'||!u.nomJeu)continue;if(!empMap[u.nomJeu])empMap[u.nomJeu]={ca:0,nbFac:0,minSvc:0,bonusProd:0};}
-  for(const f of facW){const n=f.emetteur||'Inconnu';if(!n||n==='Inconnu')continue;if(!empMap[n])empMap[n]={ca:0,nbFac:0,minSvc:0,bonusProd:0};if(f.status==='payee')empMap[n].ca+=f.montant||0;empMap[n].nbFac++;}
+  for(const f of facW){const n=f.emetteur||'Inconnu';if(!n||n==='Inconnu')continue;if(!empMap[n])empMap[n]={ca:0,nbFac:0,minSvc:0,bonusProd:0};if(f.status==='payee'&&!f.exclureCA)empMap[n].ca+=f.montant||0;empMap[n].nbFac++;}
   for(const s of svcW){const n=s.employeNom||'';if(!n)continue;if(!empMap[n])empMap[n]={ca:0,nbFac:0,minSvc:0,bonusProd:0};empMap[n].minSvc+=s.duree||0;}
   for(const p of weekPROD()){const n=p.nomJeu||'';if(!n)continue;if(!empMap[n])empMap[n]={ca:0,nbFac:0,minSvc:0,bonusProd:0};if(!empMap[n].bonusProd)empMap[n].bonusProd=0;const prodDef=produits.find(x=>x.nom===p.item||x.igNom===p.item);empMap[n].bonusProd+=(prodDef?.prix||0)*(p.quantite||0);}
   const rows=Object.entries(empMap).sort((a,b)=>b[1].ca-a[1].ca);
@@ -856,6 +858,10 @@ function renderSalaries(){
   }).join(''):'<tr><td colspan="7"><div class="empty"><div class="ei">👥</div>Aucun employé actif cette semaine</div></td></tr>';
 }
 
+window.toggleExclureCA=async function(id,exclu){
+  await setDoc(doc(db,'factures',id),{exclureCA:exclu},{merge:true});
+};
+
 window.editNote=function(uid,nom,currentNote){
   const html=`<div style="font-size:.8rem;color:var(--tx2);margin-bottom:.75rem">Note visible par l'employé s'il a la permission <strong>Salariés</strong></div><div class="mf"><label class="ml">Note pour ${nom}</label><textarea id="note-ta" class="inp" rows="4" placeholder="Avertissement, observation, message…" style="resize:vertical;min-height:80px">${currentNote}</textarea></div>`;
   showModal('Note — '+nom,html,async()=>{
@@ -872,7 +878,7 @@ function renderFactures(){
   if(sr)d=d.filter(f=>(f.emetteur||'').toLowerCase().includes(sr)||(f.raison||'').toLowerCase().includes(sr));
   if(st)d=d.filter(f=>f.status===st);
   const total=d.filter(f=>f.status==='payee').reduce((s,f)=>s+(f.montant||0),0);
-  $('fac-body').innerHTML=d.map(f=>`<tr><td class="tm">${f.creeLe||fmtD(f.timestamp)}</td><td style="font-weight:600">${f.emetteur||'—'}</td><td class="tm">${f.destinataire||'—'}</td><td class="tmono" style="color:var(--green)">${fmt(f.montant)}</td><td class="tm" style="max-width:160px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${f.raison||'—'}</td><td><span class="bdg ${f.status==='payee'?'bg':'bgd'}">${f.status==='payee'?'✓ Payée':'⏳ En attente'}</span></td><td class="tm">${f.paiement||'—'}</td></tr>`).join('')||'<tr><td colspan="7"><div class="empty"><div class="ei">🧾</div>Aucune facture cette semaine</div></td></tr>';
+  $('fac-body').innerHTML=d.map(f=>`<tr style="${f.exclureCA?'opacity:.45':''}"><td class="tm">${f.creeLe||fmtD(f.timestamp)}</td><td style="font-weight:600">${f.emetteur||'—'}</td><td class="tm">${f.destinataire||'—'}</td><td class="tmono" style="color:${f.exclureCA?'var(--tx2)':'var(--g)'}">${fmt(f.montant)}${f.exclureCA?'<span style="font-size:.65rem;color:var(--r);margin-left:.3rem">exclu CA</span>':''}</td><td class="tm" style="max-width:160px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${f.raison||'—'}</td><td><span class="bdg ${f.status==='payee'?'bg':'bgd'}">${f.status==='payee'?'✓ Payée':'⏳ En attente'}</span></td><td class="tm">${f.paiement||'—'}</td><td><button class="corr-btn" style="font-size:.68rem;white-space:nowrap" onclick="window.toggleExclureCA('${f.id}',${!f.exclureCA})">${f.exclureCA?'↩ Inclure':'✕ Exclure'}</button></td></tr>`).join('')||'<tr><td colspan="7"><div class="empty"><div class="ei">🧾</div>Aucune facture cette semaine</div></td></tr>';
   const el=$('fac-total');if(el)el.textContent=`Total encaissé : ${fmt(total)} — ${d.length} facture${d.length>1?'s':''}`;
 }
 ['ffac-s','ffac-st'].forEach(id=>$(id)?.addEventListener('input',renderFactures));
@@ -1006,7 +1012,7 @@ function openUserModal(u){
 function renderVendorTableau(){
   if(!uProf||uProf.role==='admin')return;
   const nom=uProf.nomJeu||'';
-  const mf=weekFAC().filter(f=>f.emetteur===nom&&f.status==='payee');
+  const mf=weekFAC().filter(f=>f.emetteur===nom&&f.status==='payee'&&!f.exclureCA);
   const ca=mf.reduce((s,f)=>s+(f.montant||0),0);
   const prodBonus=weekPROD().filter(p=>p.nomJeu===nom).reduce((s,p)=>{const prodDef=produits.find(x=>x.nom===p.item||x.igNom===p.item);return s+(prodDef?.prix||0)*(p.quantite||0);},0);
   const _salMin=uRang?.salaireMin||0,_salMax=uRang?.salaireMax||0;
@@ -1124,8 +1130,8 @@ document.getElementById('btn-mdp-save')?.addEventListener('click',async()=>{
 function renderImpots(){
   const facW=weekFAC(),txW=weekTX();
   const{start}=getWeekBounds(selectedWeekOffset);const numSem=getISOWeek(start);
-  const ca=facW.filter(f=>f.status==='payee').reduce((s,f)=>s+(f.montant||0),0);
-  const salTotal=Object.values(facW.filter(f=>f.status==='payee').reduce((m,f)=>{const n=f.emetteur||'Inconnu';if(n==='Inconnu')return m;if(!m[n])m[n]=0;m[n]+=f.montant||0;return m;},{})).reduce((s,ca)=>s+Math.round(ca*0.3),0);
+  const ca=facW.filter(f=>f.status==='payee'&&!f.exclureCA).reduce((s,f)=>s+(f.montant||0),0);
+  const salTotal=Object.values(facW.filter(f=>f.status==='payee'&&!f.exclureCA).reduce((m,f)=>{const n=f.emetteur||'Inconnu';if(n==='Inconnu')return m;if(!m[n])m[n]=0;m[n]+=f.montant||0;return m;},{})).reduce((s,ca)=>s+Math.round(ca*0.3),0);
   const depBrut=txW.filter(t=>t.type==='sortie').reduce((s,t)=>s+(t.montant||0),0);
   const isPrimeSem=(numSem-1)%4===0;
   const nextPrimeSem=isPrimeSem?numSem:numSem+(4-((numSem-1)%4));
