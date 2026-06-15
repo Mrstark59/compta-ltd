@@ -1132,15 +1132,16 @@ function renderImpots(){
   const{start}=getWeekBounds(selectedWeekOffset);const numSem=getISOWeek(start);
   const ca=facW.filter(f=>f.status==='payee'&&!f.exclureCA).reduce((s,f)=>s+(f.montant||0),0);
   const salTotal=Object.values(facW.filter(f=>f.status==='payee'&&!f.exclureCA).reduce((m,f)=>{const n=f.emetteur||'Inconnu';if(n==='Inconnu')return m;if(!m[n])m[n]=0;m[n]+=f.montant||0;return m;},{})).reduce((s,ca)=>s+Math.round(ca*0.3),0);
-  const depBrut=txW.filter(t=>t.type==='sortie').reduce((s,t)=>s+(t.montant||0),0);
+  const depBrut=txW.filter(t=>t.type==='sortie'&&t.categorie!=='salaire').reduce((s,t)=>s+(t.montant||0),0);
+  const depSalaireTX=txW.filter(t=>t.type==='sortie'&&t.categorie==='salaire').reduce((s,t)=>s+(t.montant||0),0);
   const isPrimeSem=(numSem-1)%4===0;
   const nextPrimeSem=isPrimeSem?numSem:numSem+(4-((numSem-1)%4));
   const primeMensCard=document.getElementById('prime-mens-card');const primeMensHidden=document.getElementById('prime-mens-hidden');const primeMensBadge=document.getElementById('prime-mens-badge');const primeMensNextLbl=document.getElementById('prime-mens-next-lbl');
   if(primeMensCard)primeMensCard.style.display=isPrimeSem?'block':'none';if(primeMensHidden)primeMensHidden.style.display=isPrimeSem?'none':'block';if(primeMensBadge)primeMensBadge.textContent='S'+numSem;if(primeMensNextLbl)primeMensNextLbl.textContent='Prochaine prime : S'+nextPrimeSem;
-  window._imp={ca,salTotal,depBrut,isPrimeSem};
+  window._imp={ca,salTotal:salTotal+depSalaireTX,depBrut,isPrimeSem};
   const f=v=>Number(Math.round(v)).toLocaleString('fr-FR')+'$';const el=id=>document.getElementById(id);
   const nbEmpInput=el('imp-nb-emp');if(nbEmpInput&&!nbEmpInput.value)nbEmpInput.value=USERS.length||'';
-  if(el('imp-ca'))el('imp-ca').textContent=f(ca);if(el('imp-sal'))el('imp-sal').textContent=f(salTotal);if(el('imp-dep-brut'))el('imp-dep-brut').textContent=f(depBrut);
+  if(el('imp-ca'))el('imp-ca').textContent=f(ca);if(el('imp-sal'))el('imp-sal').textContent=f(salTotal+depSalaireTX);if(el('imp-dep-brut'))el('imp-dep-brut').textContent=f(depBrut);
   calcImpots();
 }
 
