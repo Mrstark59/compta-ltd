@@ -795,7 +795,7 @@ function renderBilan(){
   const tE=ent.reduce((s,t)=>s+(t.montant||0),0),tS=sor.reduce((s,t)=>s+(t.montant||0),0);
   const last=TX.find(t=>t.soldeApres),sol=last?last.soldeApres:(tE-tS);
   $('bsv').textContent=fmt(sol);$('bme').textContent=fmt(tE);$('bms').textContent=fmt(tS);$('bmn').textContent=txW.length;
-  const vc=ent.filter(t=>t.categorie==='vente_client'),es=ent.filter(t=>t.categorie==='essence'),dp=sor;
+  const vc=ent.filter(t=>t.categorie==='vente_client'),es=ent.filter(t=>t.categorie==='essence'),dp=sor.filter(t=>t.categorie!=='salaire');
   $('bs1').textContent=fmt(vc.reduce((s,t)=>s+(t.montant||0),0));$('bs1n').textContent=`${vc.length} tx`;
   $('bs2').textContent=fmt(dp.reduce((s,t)=>s+(t.montant||0),0));$('bs2n').textContent=`${dp.length} tx`;
   $('bs3').textContent=fmt(es.reduce((s,t)=>s+(t.montant||0),0));$('bs3n').textContent=`${es.length} redistrib.`;
