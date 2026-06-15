@@ -336,7 +336,7 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
             <div style="display:flex;align-items:center;gap:.75rem">
               <span id="obj-pct-badge" class="bdg bp">0%</span>
               <span id="obj-valeurs" style="font-size:.78rem;color:var(--tx2)"></span>
-              <button id="btn-edit-obj" class="btn-s" style="font-size:.72rem;padding:.3rem .65rem;display:none">✏️ Modifier</button>
+              <button id="btn-edit-obj" class="btn-s" style="font-size:.72rem;padding:.3rem .65rem;display:none" onclick="window.toggleSetObjectif()">✏️ Modifier</button>
             </div>
           </div>
           <div style="background:rgba(124,58,237,.08);border-radius:6px;height:8px;overflow:hidden;margin-bottom:.5rem">
@@ -348,8 +348,8 @@ tbody td{padding:.55rem .75rem;vertical-align:middle}
           <div class="ctitle" style="color:var(--vl)">🎯 Définir l'objectif d'équipe</div>
           <div style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap">
             <div><div class="prod-lbl">CA cible cette semaine ($)</div><input id="obj-input" type="number" min="0" class="inp" placeholder="Ex: 500000" style="width:200px"/></div>
-            <button class="btn-p" id="btn-save-obj" style="max-width:140px;margin-bottom:0">Enregistrer</button>
-            <button class="btn-s" id="btn-del-obj" style="color:var(--r);border-color:rgba(239,68,68,.3)">Supprimer</button>
+            <button class="btn-p" id="btn-save-obj" style="max-width:140px;margin-bottom:0" onclick="window.saveObjectif()">Enregistrer</button>
+            <button class="btn-s" id="btn-del-obj" style="color:var(--r);border-color:rgba(239,68,68,.3)" onclick="window.delObjectif()">Supprimer</button>
           </div>
         </div>
         <div class="srow">
@@ -1202,18 +1202,18 @@ window.closeService=async function(id,dureeMin){if(!confirm('Clôturer ce servic
 
 setInterval(()=>{if(uProf?.role==='admin')renderEnService();},60000);
 
-document.getElementById('btn-save-obj')?.addEventListener('click',async()=>{
+window.saveObjectif=async function(){
   const val=parseInt(document.getElementById('obj-input')?.value)||0;
   if(!val){alert('Entre un montant cible valide');return;}
   await setDoc(doc(db,'config','objectif'),{cible:val,updatedAt:serverTimestamp()});
-});
-document.getElementById('btn-del-obj')?.addEventListener('click',async()=>{
+};
+window.delObjectif=async function(){
   if(!confirm('Supprimer l objectif ?'))return;
   await deleteDoc(doc(db,'config','objectif'));
-});
-document.getElementById('btn-edit-obj')?.addEventListener('click',()=>{
+};
+window.toggleSetObjectif=function(){
   const sc=$('objectif-set-card');if(sc)sc.style.display=sc.style.display==='none'?'block':'none';
-});
+};
 
 
 function showModal(title,content,onSave){$('mtitle').textContent=title;$('mcontent').innerHTML=content;$('msave').onclick=onSave;$('modal-overlay').classList.add('open');}
